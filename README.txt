@@ -5,3 +5,5 @@ Rules:
   4. If you do break something in main, say it immediately so we can either fix it, or roll back.
 
   run "pip install -r requirements.txt" inside "AIcademia\project_search"
+
+  when installing new packages, add it to project_search/requirements.txt
