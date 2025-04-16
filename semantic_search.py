@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D 
 
 projects_dict = {}
-with open('projects.csv', mode='r', encoding='utf-8') as file:
+with open('project_dataset/projects.csv', mode='r', encoding='utf-8') as file:
     reader = csv.DictReader(file)
     for row in reader:
         projects_dict[row['Title']] = row['Description']
@@ -47,9 +47,8 @@ ax.set_ylabel("Dimension 2")
 ax.set_zlabel("Dimension 3")
 
 plt.tight_layout()
-plt.savefig("project_embeddings_3d_plot.png")
+plt.savefig("graphs/project_embeddings_3d_plot.png")
 plt.show()
-
 
 # Show results
 while True:
