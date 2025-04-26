@@ -4,7 +4,7 @@ import Keywords from "@/components/ui/Keywords";
 
 const SearchEngine = () => {
   return (
-    <div className=" flex flex-col h-full sm:pt-9 lg:pt-19 ">
+    <div className=" flex flex-col h-full sm:pt-10">
       <div className="flex flex-col">
         <div className="text-center">
           <h1 className="font-arima font-bold text-xl xs:text-2xl sm:text-3xl md:text-4xl xl:text-5xl">
@@ -32,7 +32,7 @@ const SearchEngine = () => {
             />
           </div>
         </div>
-        <div className="font-roboto flex flex-wrap items-center mx-auto sm:w-5/6 justify-center gap-2 mt-3 sm:mt-5 font-medium text-[10px] xs:text-[11px] sm:text-xs md:text-sm">
+        <div className="font-roboto flex flex-wrap items-center mx-auto sm:w-5/6 justify-center gap-2 mt-3 sm:mt-5 font-medium text-[10px] xs:text-[11px] sm:text-xs md:text-sm ">
           <Keywords />
           <Keywords />
           <Keywords />
@@ -41,8 +41,8 @@ const SearchEngine = () => {
           <Keywords />
         </div>
       </div>
-      <div className="flex-1 mt-8 overflow-y-auto ">
-        <ul className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:px-5 xl:px-10 2xl:px-20 gap-3 sm:gap-5 h-full content-start font-roboto">
+      <div className="flex-1 mt-8 pb-1">
+        <ul className="grid grid-cols-2  md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5  sm:px-5 xl:px-10 2xl:px-20 gap-3 sm:gap-5 content-start font-roboto pb-2">
           <Card />
           <Card />
           <Card />

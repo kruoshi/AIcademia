@@ -14,4 +14,5 @@
   --font-roboto: var(--font-roboto);
   --font-arima: var(--font-arima);
   --breakpoint-xs: 25rem;
+  --breakpoint-3xl: 100rem;
 }

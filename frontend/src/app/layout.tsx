@@ -30,11 +30,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${arima.variable} ${roboto.variable} antialiased`}>
         <Providers>
-          <div className="flex h-screen">
+          <div className="flex h-screen w-screen">
             <Sidebar />
-            <div className="flex-1 flex flex-col h-full ">
+            <div className="flex-1 flex flex-col w-full h-full">
               <Header />
-              <main className="lg:flex-1 w-screen bg-background py-6 lg:py-10 pr-6 pl-6 lg:pr-14 lg:pl-86 overflow-hidden">
+              <main className="flex-1 w-full h-full bg-background py-6 lg:py-10 pr-6 pl-6 lg:pr-10 lg:pl-82 overflow-auto">
                 {children}
               </main>
             </div>

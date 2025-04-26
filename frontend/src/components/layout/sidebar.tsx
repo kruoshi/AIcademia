@@ -75,7 +75,7 @@ const Sidebar = () => {
                   href={path}
                   className={clsx(
                     "flex items-center gap-3 sm:gap-5 py-2 px-3 md:px-5 rounded-md ",
-                    pathname === path
+                    pathname.startsWith(path)
                       ? "text-black bg-secondary "
                       : "text-white hover:bg-white/10"
                   )}
