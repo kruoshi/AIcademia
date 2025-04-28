@@ -8,4 +8,4 @@ Rules:
 
   when installing new packages, add it to project_search/requirements.txt
 
-  copy "configExample.py" to "config.py" replace "config.py" "setme" values using the Supabase values
+  run "cp configExample.py config.py" then replace "config.py" "setme" values using the Supabase values
