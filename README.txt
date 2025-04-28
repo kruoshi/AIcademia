@@ -7,3 +7,5 @@ Rules:
   run "pip install -r requirements.txt" inside "AIcademia\project_search"
 
   when installing new packages, add it to project_search/requirements.txt
+
+  replace config.py "setme" values
