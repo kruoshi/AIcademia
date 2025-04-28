@@ -50,7 +50,7 @@ const Sidebar = () => {
     <>
       <div
         className={clsx(
-          "fixed size-screen inset-0 bg-black z-30 opacity-70 lg:hidden",
+          "fixed inset-0 bg-black z-30 opacity-70 lg:hidden",
           isOpen ? "block" : "hidden"
         )}
         onClick={closeSidebar}
