@@ -1,4 +1,4 @@
-import { GraduationCap, Bookmark, Workflow } from "lucide-react";
+import { Bookmark, GraduationCap, Workflow } from "lucide-react";
 
 interface CardProps {
   id: string;
@@ -23,15 +23,12 @@ const SearchCard: React.FC<CardProps> = ({
       <div className="flex justify-between items-end">
         <div className="flex items-center gap-1.5 text-text text-[10px] xs:text-[11px]  font-semibold">
           <span className="flex gap-1.5 items-center bg-accent/10 px-2.5 py-0.5 rounded-full ">
-            <GraduationCap
-              className="size-3.5 md:size-4.5  "
-              strokeWidth={1.5}
-            />
+            <GraduationCap className="size-3.5 md:size-4.5" strokeWidth={1.5} />
             {course}
           </span>
 
           <span className="flex gap-1.5 items-center bg-accent/10 px-2.5 py-0.5 rounded-full ">
-            <Workflow className="size-3.5 md:size-4.5  " strokeWidth={1.5} />
+            <Workflow className="size-3.5 md:size-4.5" strokeWidth={1.5} />
             {specialization}
           </span>
         </div>
@@ -39,7 +36,7 @@ const SearchCard: React.FC<CardProps> = ({
           <Bookmark className="size-3 sm:size-3.5 md:size-4 " />
         </div>
       </div>
-      <h1 className="my-4 md:my-5 text-text font-semibold text-xs xs:text-sm  ">
+      <h1 className="my-4 md:my-5 text-text font-semibold text-xs xs:text-sm">
         {title}
       </h1>
       <div className="relative mb-2">
