@@ -3,22 +3,10 @@
 import Image from "next/image";
 import bgImage from "@public/login_pic.webp";
 import logo from "@public/WHITELOGOTEXT_AICAD.svg";
-import { supabase } from "@/lib/supabaseClient";
-
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function Home() {
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      console.error("Login error:", error.message);
-    }
-  };
+  const { data: session } = useSession();
   
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -43,7 +31,7 @@ export default function Home() {
               Your gateway to student academic excellence
             </p>
             <button
-              onClick={handleLogin}
+              onClick={() => signIn("google", { callbackUrl: "/search-engine" })}
               className="flex cursor-pointer bg-white gap-3 lg:gap-5 mt-5 lg:mt-8 py-1.5 pl-2 pr-6 items-center"
             >
               <svg
