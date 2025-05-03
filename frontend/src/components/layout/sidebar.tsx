@@ -1,6 +1,6 @@
 "use client";
 import { JSX } from "react";
-import { Globe, BookOpen, Library, FileUp, Stamp, LogOut } from "lucide-react";
+import { BookOpen, FileUp, Globe, Library, LogOut, Stamp } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "@public/WHITELOGOTEXT_AICAD.svg";
@@ -8,6 +8,7 @@ import avatar from "@public/avatar.jpg";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/lib/context/sidebar-context";
 import clsx from "clsx";
+import { signOut, useSession } from "next-auth/react";
 
 type SideNavItem = {
   title: string;
@@ -46,19 +47,23 @@ const sideNavItems: SideNavItem[] = [
 const Sidebar = () => {
   const pathname = usePathname();
   const { isOpen, closeSidebar } = useSidebar();
+  const { data: session } = useSession();
+  const user = session?.user;
+
   return (
     <>
       <div
         className={clsx(
           "fixed inset-0 bg-black z-30 opacity-70 lg:hidden",
-          isOpen ? "block" : "hidden"
+          isOpen ? "block" : "hidden",
         )}
         onClick={closeSidebar}
-      ></div>
+      >
+      </div>
       <aside
         className={clsx(
           "fixed h-full z-40 bg-accent transition-all duration-300 ease-in-out ",
-          isOpen ? "top-0 left-0 w-3/5 xs:w-1/2 sm:w-1/3 lg:w-72 " : "hidden"
+          isOpen ? "top-0 left-0 w-3/5 xs:w-1/2 sm:w-1/3 lg:w-72 " : "hidden",
         )}
       >
         <nav className="flex flex-col h-full pt-2 justify-between">
@@ -67,7 +72,7 @@ const Sidebar = () => {
               src={logo}
               className="w-25 ml-5 lg:w-40 lg:ml-0 lg:self-center lg:mt-3"
               alt="Logo"
-            ></Image>
+            />
             <ul className="font-sans flex flex-col gap-2.5 mx-3 ">
               {sideNavItems.map(({ title, path, icon }) => (
                 <Link
@@ -77,7 +82,7 @@ const Sidebar = () => {
                     "flex items-center gap-3 sm:gap-5 py-2 px-3 md:px-5 rounded-md ",
                     pathname.startsWith(path)
                       ? "text-black bg-secondary "
-                      : "text-white hover:bg-white/10"
+                      : "text-white hover:bg-white/10",
                   )}
                 >
                   {icon}
@@ -91,21 +96,24 @@ const Sidebar = () => {
           <footer className="flex gap-2 p-3 border-t-2 border-white items-center justify-between text-white w-full">
             <div className="flex gap-3 w-6/7">
               <Image
-                src={avatar}
+                src={user?.image || avatar}
                 className="w-6 xs:w-8 lg:w-10 rounded-full border border-white"
                 alt="Avatar"
+                width={40}
+                height={40}
               />
               <div className="flex flex-col font-medium truncate">
                 <h1 className="text-[10px] truncate xs:text-sm lg:text-[14px]">
-                  Jose Danrick Desiderio
+                  {user?.name || "No Name"}
                 </h1>
                 <p className="text-[8px] truncate xs:text-[10px] lg:text-[11px]">
-                  josedanrick.desiderio.cics@ust.edu.ph
+                  {user?.email || "No Email"}
                 </p>
               </div>
             </div>
-
-            <LogOut className="w-4 xs:w-5 lg:w-6" strokeWidth={3} />
+            <button onClick={() => signOut()}>
+              <LogOut className="w-4 xs:w-5 lg:w-6" strokeWidth={3} />
+            </button>
           </footer>
         </nav>
       </aside>
