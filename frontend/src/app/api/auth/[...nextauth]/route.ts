@@ -29,12 +29,17 @@ const handler = NextAuth({
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
-  
-      await supabaseAdmin.from("profiles").upsert({
-        user_id: user.id || account?.providerAccountId,
-        email: user.email,
-        created_at: new Date().toISOString(),
-      });
+
+      await supabaseAdmin.from("profiles").upsert(
+        {
+          user_id: account?.providerAccountId,
+          email: user.email,
+          created_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id",
+        }
+      );
     },
   },
 });
