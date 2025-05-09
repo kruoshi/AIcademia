@@ -4,7 +4,7 @@ import easyocr
 import numpy as np
 
 app = Flask(__name__)
-reader = easyocr.Reader(['en'])  # Load English OCR model
+reader = easyocr.Reader(['en'])
 
 @app.route('/')
 def index():
@@ -15,24 +15,39 @@ def upload():
     file = request.files['pdf']
 
     try:
-        # Convert PDF bytes to list of PIL Images
         images = convert_from_bytes(file.read())
+        all_lines = []
 
-        result_text = ''
-        for i, image in enumerate(images):
-            # Ensure the image is in RGB mode
+        for image in images:
             image = image.convert("RGB")
-
-            # Convert PIL Image to NumPy array
             np_image = np.array(image)
+            lines = reader.readtext(np_image, detail=0, paragraph=False)
+            all_lines.extend([line.strip() for line in lines if line.strip()])
 
-            # Perform OCR using EasyOCR
-            text = reader.readtext(np_image, detail=0, paragraph=True)
+        # Step 1: TITLE (first 3 lines)
+        title_lines = all_lines[:3]
+        title = ' '.join(title_lines)
 
-            # Format and collect result
-            result_text += f"<h4>Page {i+1}</h4><pre>{' '.join(text)}</pre>"
+        # Step 2: Find last line containing 'ph' (case-insensitive)
+        last_email_index = -1
+        for i, line in enumerate(all_lines):
+            if 'ph' in line.lower():
+                last_email_index = i
 
-        return result_text
+        # Step 3: AUTHORS = lines 4 to last_email_index (inclusive)
+        if last_email_index != -1:
+            authors = ' '.join(all_lines[3:last_email_index + 1])
+            abstract = ' '.join(all_lines[last_email_index + 1:])
+        else:
+            # fallback if no 'ph' found
+            authors = ' '.join(all_lines[3:6])
+            abstract = ' '.join(all_lines[6:])
+
+        return f"""
+        <h3>Title</h3><p>{title}</p>
+        <h3>Authors</h3><p>{authors}</p>
+        <h3>Abstract</h3><p>{abstract}</p>
+        """
 
     except Exception as e:
         return f"<h3 style='color: red;'>Error: {str(e)}</h3>"
