@@ -18,15 +18,25 @@ def upload():
         images = convert_from_bytes(file.read())
         all_lines = []
 
+        stop = False
         for image in images:
+            if stop:
+                break
             image = image.convert("RGB")
             np_image = np.array(image)
             lines = reader.readtext(np_image, detail=0, paragraph=False)
-            all_lines.extend([line.strip() for line in lines if line.strip()])
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                if "keywords" in line.lower():
+                    stop = True
+                    break
+                all_lines.append(line)
 
         # Step 1: TITLE (first 3 lines)
-        title_lines = all_lines[:3]
-        title = ' '.join(title_lines)
+        title = ' '.join(all_lines[:3])
 
         # Step 2: Find last line containing 'ph' (case-insensitive)
         last_email_index = -1
@@ -34,12 +44,11 @@ def upload():
             if 'ph' in line.lower():
                 last_email_index = i
 
-        # Step 3: AUTHORS = lines 4 to last_email_index (inclusive)
+        # Step 3: AUTHORS and ABSTRACT
         if last_email_index != -1:
             authors = ' '.join(all_lines[3:last_email_index + 1])
             abstract = ' '.join(all_lines[last_email_index + 1:])
         else:
-            # fallback if no 'ph' found
             authors = ' '.join(all_lines[3:6])
             abstract = ' '.join(all_lines[6:])
 
