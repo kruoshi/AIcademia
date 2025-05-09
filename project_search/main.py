@@ -33,6 +33,64 @@ def insert_embeddings_to_supabase(projects, embeddings):
             else:
                 print(f"Failed to insert project '{title}': {response.error}")
 
+def hybrid_search_projects(query, model, top_k=3, vector_weight=0.7, keyword_weight=0.3):
+    # --- Vector Search ---
+    query_embedding = model.encode([query])[0].tolist()
+    
+    # Fetch all projects (for brute-force comparison; replace with pgvector if possible)
+    response = supabase.table('projects').select('id, title, description, embedding').execute()
+    
+    if not response.data:
+        print("No projects found.")
+        return []
+    
+    projects = response.data
+    
+    # Compute vector similarities
+    vector_scores = []
+    for project in projects:
+        emb = ast.literal_eval(project['embedding'])
+        similarity = cosine_similarity([query_embedding], [emb])[0][0]
+        vector_scores.append(similarity)
+    
+    # --- Keyword Search ---
+    # Use Supabase's full-text search (assumes you have a `tsvector` column)
+    keyword_response = supabase.table('projects') \
+        .select('id, title, description') \
+        .text_search('description', f"'{query.replace(' ', ' & ')}'") \
+        .execute()
+    
+    keyword_matches = {item['id']: 1.0 for item in keyword_response.data}  # Binary score (1 if match)
+    
+    # --- Hybrid Scoring ---
+    hybrid_results = []
+    for idx, project in enumerate(projects):
+        project_id = project['id']
+        
+        # Normalize vector score to [0, 1] (if not already)
+        vector_score = vector_scores[idx]
+        
+        # Get keyword score (default to 0 if no match)
+        keyword_score = keyword_matches.get(project_id, 0.0)
+        
+        # Combined weighted score
+        hybrid_score = (vector_weight * vector_score) + (keyword_weight * keyword_score)
+        
+        hybrid_results.append({
+            'id': project_id,
+            'title': project['title'],
+            'description': project['description'],
+            'vector_score': vector_score,
+            'keyword_score': keyword_score,
+            'hybrid_score': hybrid_score
+        })
+    
+    # Sort by hybrid score
+    hybrid_results.sort(key=lambda x: x['hybrid_score'], reverse=True)
+    
+    # Return top K results
+    return [{'title': res['title'], 'description': res['description']} for res in hybrid_results[:top_k]]
+
 def search_projects_supabase(query, model, top_k=3):
     # Encode the query to get its embedding
     query_embedding = model.encode([query])[0].tolist()  # Convert query embedding to list
@@ -81,10 +139,20 @@ def main():
             break
 
         # Pass the model to the search function
-        results = search_projects_supabase(query, model)
-        print("🔍 Results:")
-        for result in results:
-            print("-", result)
+        #results = search_projects_supabase(query, model)
+        results = hybrid_search_projects(
+            query=query,
+            model=model,
+            top_k=5,               # Number of results to return
+            vector_weight=0.7,     # Weight for semantic search (70%)
+            keyword_weight=0.3     # Weight for keyword search (30%)
+        )
+        print("\n🔍 Search Results:")
+        if not results:
+            print("No matching projects found.")
+        else:
+            for idx, result in enumerate(results, 1):
+                print(f"{idx}. {result['title']}")
 
 
 if __name__ == "__main__":
