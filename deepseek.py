@@ -1,5 +1,5 @@
 from openai import OpenAI
-import api_env
+#import api_env
 import os
 import json
 from supabase import create_client, Client
