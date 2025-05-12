@@ -16,23 +16,23 @@ def insert_embeddings_to_supabase(projects, embeddings):
             'embedding': embedding,
         }
 
-        # Check if project exists
-        existing_project = supabase.table('projects').select('title').eq('title', title).execute()
+        # Check if project exists (now checking capstone_embed table)
+        existing_project = supabase.table('capstone_embed').select('title').eq('title', title).execute()
 
         if existing_project.data:
             print(f"Project '{title}' already exists. Skipping insertion.")
         else:
-            response = supabase.table('projects').insert(data).execute()
+            response = supabase.table('capstone_embed').insert(data).execute()
             if response.data:
                 print(f"Project '{title}' inserted successfully!")
             else:
                 print(f"Failed to insert project '{title}': {response.error}")
 
 def vector_search_projects(query, model, top_k=5):
-    """Perform pure vector similarity search"""
+    """Perform pure vector similarity search using the renamed function"""
     query_embedding = model.encode([query])[0].tolist()
     
-    response = supabase.rpc("vector_project_search", {
+    response = supabase.rpc("vector_capstone_search", {  # Updated function name
         "embed": query_embedding
     }).execute()
     
@@ -52,7 +52,7 @@ def main():
     model = get_model(MODEL_NAME)
     embeddings = encode_projects(model, descriptions)
 
-    visualize_embeddings(embeddings, titles, PLOT_PATH)
+    #visualize_embeddings(embeddings, titles, PLOT_PATH)
     insert_embeddings_to_supabase(projects, embeddings)
 
     while True:
