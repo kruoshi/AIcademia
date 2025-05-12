@@ -1,58 +1,85 @@
-from config import CSV_FILE_PATH, MODEL_NAME, PLOT_PATH, SUPABASE_URL, SUPABASE_KEY
-from data_loader import load_projects
-from embedder import get_model, encode_projects
+import os
 from supabase import create_client, Client
-from visualize import visualize_embeddings
 import numpy as np
+from embedder import get_model, encode_projects
+from visualize import visualize_embeddings
+from config import MODEL_NAME, PLOT_PATH, SUPABASE_URL, SUPABASE_KEY
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def load_projects_from_supabase():
+    """Load projects from Supabase capstones table"""
+    response = supabase.table('capstones').select('id,title,abstract,keywords').execute()
+    if not response.data:
+        raise ValueError("No projects found in the capstones table")
+    
+    projects = {}
+    for row in response.data:
+        # Create a composite text for embedding using title, abstract, and keywords
+        composite_text = f"{row['title']}\n\n{row['abstract']}\n\nKeywords: {row['keywords']}"
+        projects[row['id']] = {
+            'title': row['title'],
+            'composite_text': composite_text,
+            'abstract': row['abstract'],
+            'keywords': row['keywords']
+        }
+    return projects
+
 def insert_embeddings_to_supabase(projects, embeddings):
-    for i, (title, description) in enumerate(projects.items()):
-        embedding = embeddings[i].tolist()
+    """Insert embeddings into the capstone_embed table"""
+    for project_id, data in projects.items():
+        embedding = embeddings[project_id].tolist() if isinstance(project_id, int) else embeddings[list(projects.keys()).index(project_id)].tolist()
+        
         data = {
-            'title': title,
-            'description': description,
+            'id': project_id,
+            'title': data['title'],
+            'abstract': data['abstract'],
+            'keywords': data['keywords'],
             'embedding': embedding,
         }
 
-        # Check if project exists (now checking capstone_embed table)
-        existing_project = supabase.table('capstone_embed').select('title').eq('title', title).execute()
+        # Check if project exists in capstone_embed table
+        existing_project = supabase.table('capstone_embed').select('id').eq('id', project_id).execute()
 
         if existing_project.data:
-            print(f"Project '{title}' already exists. Skipping insertion.")
+            print(f"Project '{data['title']}' already exists. Updating embedding.")
+            response = supabase.table('capstone_embed').update({'embedding': embedding}).eq('id', project_id).execute()
         else:
             response = supabase.table('capstone_embed').insert(data).execute()
-            if response.data:
-                print(f"Project '{title}' inserted successfully!")
-            else:
-                print(f"Failed to insert project '{title}': {response.error}")
+        
+        if response.data:
+            print(f"Project '{data['title']}' processed successfully!")
+        else:
+            print(f"Failed to process project '{data['title']}': {response.error}")
 
 def vector_search_projects(query, model, top_k=5):
-    """Perform pure vector similarity search using the renamed function"""
+    """Perform vector similarity search using the composite embeddings"""
     query_embedding = model.encode([query])[0].tolist()
     
-    response = supabase.rpc("vector_capstone_search", {  # Updated function name
+    response = supabase.rpc("vector_capstone_search", {
         "embed": query_embedding
     }).execute()
     
     if response.data:
         return [{
+            'id': item['id'],
             'title': item['title'],
-            'description': item['description'],
+            'abstract': item['abstract'],
+            'keywords': item['keywords'],
             'score': item['similarity_score']
         } for item in response.data[:top_k]]
     return []
 
 def main():
-    projects = load_projects(CSV_FILE_PATH)
-    descriptions = list(projects.values())
-    titles = list(projects.keys())
+    # Load projects from Supabase instead of CSV
+    projects = load_projects_from_supabase()
+    composite_texts = [data['composite_text'] for data in projects.values()]
 
     model = get_model(MODEL_NAME)
-    embeddings = encode_projects(model, descriptions)
+    embeddings = encode_projects(model, composite_texts)
 
-    #visualize_embeddings(embeddings, titles, PLOT_PATH)
+    # visualize_embeddings(embeddings, [data['title'] for data in projects.values()], PLOT_PATH)
+    
     insert_embeddings_to_supabase(projects, embeddings)
 
     while True:
@@ -72,6 +99,8 @@ def main():
         else:
             for idx, result in enumerate(results, 1):
                 print(f"{idx}. {result['title']} (Score: {result['score']:.3f})")
+                #print(f"   Keywords: {result['keywords']}")
+                #print(f"   Abstract: {result['abstract'][:200]}...\n")
 
 if __name__ == "__main__":
     main()
