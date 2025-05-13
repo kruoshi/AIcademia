@@ -5,7 +5,7 @@ import SearchCard from "@/components/ui/SearchCard";
 import Keywords from "@/components/ui/Keywords";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import Link from "next/link";
+import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 
 type CapstoneResult = {
   id: string;
@@ -13,7 +13,9 @@ type CapstoneResult = {
   title: string;
   keywords: string[];
   specialization: string;
+  abstract: string;
   course: string;
+  authors: string;
   published_at: string;
   created_at: string;
 };
@@ -21,6 +23,9 @@ type CapstoneResult = {
 const SearchEngine: React.FC = () => {
   const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
   const [query, setQuery] = useState("");
+  const [selectedCapstone, setSelectedCapstone] = useState<
+    CapstoneResult | null
+  >(null);
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -31,7 +36,9 @@ const SearchEngine: React.FC = () => {
 
       const { data, error } = await supabase
         .from("capstones")
-        .select("id, slug, title, keywords, created_at")
+        .select(
+          "id, slug, title, abstract, keywords, specialization, course, authors, created_at",
+        )
         .ilike("title", `%${query}%`);
 
       if (!error && data) setSearchResults(data as CapstoneResult[]);
@@ -82,26 +89,43 @@ const SearchEngine: React.FC = () => {
 
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
         {searchResults.map((doc) => (
-          <Link
-            href={`/capstones/${doc.id}`}
-            className="block hover:opacity-90 transition cursor-pointer"
+          <li
+            key={doc.id}
+            onClick={() => setSelectedCapstone(doc)}
+            className="cursor-pointer"
           >
-            <li key={doc.id}>
-              <SearchCard
-                id={doc.id}
-                title={doc.title}
-                specialization={doc.keywords?.[1] || "General"}
-                course={doc.keywords?.[0] || "IT"}
-                date={new Date(doc.created_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                })}
-              />
-            </li>
-          </Link>
+            <SearchCard
+              id={doc.id}
+              title={doc.title}
+              specialization={doc.keywords?.[1] || "General"}
+              course={doc.keywords?.[0] || "IT"}
+              date={new Date(doc.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+              })}
+            />
+          </li>
         ))}
       </ul>
+      {selectedCapstone && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setSelectedCapstone(null)}
+          >
+          </div>
 
+          <div
+            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CapstoneSidebar
+              capstone={selectedCapstone}
+              onClose={() => setSelectedCapstone(null)}
+            />
+          </div>
+        </>
+      )}
       <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
         Show More
       </button>
