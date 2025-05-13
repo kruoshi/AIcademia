@@ -38,10 +38,10 @@ export default function KeywordProcessor({ onComplete, autoProcess = true }: Key
           }
         })
         
-        logMessage("Supabase client initialized successfully")
+        //logMessage("Supabase client initialized successfully")
         return client
       } catch (error) {
-        logMessage(`Error initializing Supabase: ${error instanceof Error ? error.message : String(error)}`)
+        //logMessage(`Error initializing Supabase: ${error instanceof Error ? error.message : String(error)}`)
         console.error("Error initializing Supabase:", error)
         return null
       }
@@ -152,10 +152,10 @@ export default function KeywordProcessor({ onComplete, autoProcess = true }: Key
     }
 
     setLoading(true)
-    setLog(["Starting keyword processing..."])
+    //setLog(["Starting keyword processing..."])
 
     try {
-      logMessage("Querying for items without keywords...")
+      logMessage("Uploading...")
       
       // Create a mock item for testing if needed
       const mockItem = {
@@ -190,7 +190,7 @@ export default function KeywordProcessor({ onComplete, autoProcess = true }: Key
         await processSingleItem(client, mockItem)
       }
 
-      logMessage("All items processed successfully.")
+      //logMessage("All items processed successfully.")
     } catch (error) {
       logMessage(`Error processing capstone items: ${error instanceof Error ? error.message : String(error)}`)
     } finally {

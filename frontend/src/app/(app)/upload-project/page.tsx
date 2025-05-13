@@ -242,15 +242,13 @@ export default function UploadProjectPage() {
               >
                 {loading ? "Processing..." : "UPLOAD"}
               </button>
-
-              <EnvDebug />
             </div>
           </div>
 
           {showKeywordProcessor && (
             <div className="mt-6 p-4 border border-gray-200 rounded-lg">
               <h2 className="text-xl font-bold mb-4">
-                Automatic Keyword Processing
+                File Processing
                 <span className="ml-2 text-sm font-normal text-gray-500">
                   (Processing will start automatically)
                 </span>
