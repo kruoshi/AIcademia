@@ -1,5 +1,0 @@
-project_search/graphs/*
-!project_search/graphs/.gitkeep
-__pycache__/
-.vscode/
-project_search/config.py
