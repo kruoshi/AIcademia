@@ -9,31 +9,29 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def load_projects_from_supabase():
     """Load projects from Supabase capstones table"""
-    response = supabase.table('capstones').select('id,title,abstract,keywords').execute()
+    response = supabase.table('capstones').select('id,title,keywords').execute()  # Removed abstract
     if not response.data:
         raise ValueError("No projects found in the capstones table")
     
     projects = {}
     for row in response.data:
-        # Create a composite text for embedding using title, abstract, and keywords
-        composite_text = f"{row['title']}\n\n{row['abstract']}\n\nKeywords: {row['keywords']}"
+        # Create composite text using only title and keywords
+        composite_text = f"{row['title']}\n\nKeywords: {row['keywords']}"
         projects[row['id']] = {
             'title': row['title'],
             'composite_text': composite_text,
-            'abstract': row['abstract'],
-            'keywords': row['keywords']
+            'keywords': row['keywords']  # Removed abstract
         }
     return projects
 
 def insert_embeddings_to_supabase(projects, embeddings):
     """Insert embeddings into the capstone_embed table"""
     for project_id, data in projects.items():
-        embedding = embeddings[project_id].tolist() if isinstance(project_id, int) else embeddings[list(projects.keys()).index(project_id)].tolist()
+        embedding = embeddings[list(projects.keys()).index(project_id)].tolist()
         
         data = {
             'id': project_id,
             'title': data['title'],
-            'abstract': data['abstract'],
             'keywords': data['keywords'],
             'embedding': embedding,
         }
@@ -53,7 +51,7 @@ def insert_embeddings_to_supabase(projects, embeddings):
             print(f"Failed to process project '{data['title']}': {response.error}")
 
 def vector_search_projects(query, model, top_k=5):
-    """Perform vector similarity search using the composite embeddings"""
+    """Perform vector similarity search using title+keywords embeddings"""
     query_embedding = model.encode([query])[0].tolist()
     
     response = supabase.rpc("vector_capstone_search", {
@@ -64,7 +62,6 @@ def vector_search_projects(query, model, top_k=5):
         return [{
             'id': item['id'],
             'title': item['title'],
-            'abstract': item['abstract'],
             'keywords': item['keywords'],
             'score': item['similarity_score']
         } for item in response.data[:top_k]]
