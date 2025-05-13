@@ -15,11 +15,11 @@ export default async function AppLayout(
     <Providers>
       {currentUser
         ? (
-          <div className="flex h-screen w-screen">
+          <div className="flex ">
             <Sidebar />
-            <div className="w-full h-full">
+            <div className="min-h-screen w-screen">
               <Header />
-              <main className=" w-full h-full bg-background  border py-6 lg:py-10 pr-6 pl-6 lg:pr-10 lg:pl-82 overflow-auto ">
+              <main className="bg-background h-full py-6 lg:py-14 pr-6 pl-6 lg:pr-14 lg:pl-86 3xl:pl-99">
                 {children}
               </main>
             </div>

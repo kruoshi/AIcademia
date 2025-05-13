@@ -1,54 +1,31 @@
 "use client";
-import { JSX } from "react";
-import { BookOpen, FileUp, Globe, Library, LogOut, Stamp } from "lucide-react";
+
 import Link from "next/link";
 import Image from "next/image";
 import logo from "@public/WHITELOGOTEXT_AICAD.svg";
 import avatar from "@public/avatar.jpg";
+import { CloudUpload, Ellipsis, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/lib/context/sidebar-context";
+import NavItems from "@/lib/constants/NavItems";
 import clsx from "clsx";
 import { signOut, useSession } from "next-auth/react";
-
-type SideNavItem = {
-  title: string;
-  path: string;
-  icon?: JSX.Element;
-};
-
-const sideNavItems: SideNavItem[] = [
-  {
-    title: "Search Engine",
-    path: "/search-engine",
-    icon: <Globe strokeWidth={2.5} className="size-4 md:size-5" />,
-  },
-  {
-    title: "Reading References",
-    path: "/reading-references",
-    icon: <BookOpen strokeWidth={2.5} className="size-4 md:size-5 " />,
-  },
-  {
-    title: "Academic Database",
-    path: "/academic-database",
-    icon: <Library strokeWidth={2.5} className="size-4 md:size-5" />,
-  },
-  {
-    title: "Upload Project",
-    path: "/upload-project",
-    icon: <FileUp strokeWidth={2.5} className="size-4 md:size-5 " />,
-  },
-  {
-    title: "Review Approvals",
-    path: "/review-approvals",
-    icon: <Stamp strokeWidth={2.5} className="size-4 md:size-5" />,
-  },
-];
+import { useState } from "react";
 
 const Sidebar = () => {
   const pathname = usePathname();
   const { isOpen, closeSidebar } = useSidebar();
   const { data: session } = useSession();
   const user = session?.user;
+
+  const toTitleCase = (name: string) =>
+    name
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <>
@@ -60,61 +37,96 @@ const Sidebar = () => {
         onClick={closeSidebar}
       >
       </div>
+
       <aside
         className={clsx(
-          "fixed h-full z-40 bg-accent transition-all duration-300 ease-in-out ",
-          isOpen ? "top-0 left-0 w-3/5 xs:w-1/2 sm:w-1/3 lg:w-72 " : "hidden",
+          "fixed h-full z-40 bg-accent transition-all duration-300 ease-in-out",
+          isOpen
+            ? "top-0 left-0 w-3/5 xs:w-1/2 sm:w-1/3 lg:w-72 3xl:w-85"
+            : "hidden",
         )}
       >
-        <nav className="flex flex-col h-full pt-2 justify-between">
-          <div className="flex flex-col gap-8 lg:gap-10">
+        <nav className="flex flex-col h-full w-full justify-between px-3 py-8 lg:px-6 font-roboto">
+          <div className="flex flex-col">
             <Image
               src={logo}
-              className="w-25 ml-5 lg:w-40 lg:ml-0 lg:self-center lg:mt-3"
+              className="w-35 sm:w-40 lg:w-50 self-center"
               alt="Logo"
             />
-            <ul className="font-sans flex flex-col gap-2.5 mx-3 ">
-              {sideNavItems.map(({ title, path, icon }) => (
+
+            <div className="hidden relative items-center lg:flex gap-2 lg:gap-3.5 mt-14">
+              <Image
+                src={user?.image || avatar}
+                className="lg:w-12 3xl:w-14 rounded-full border border-white"
+                alt="Avatar"
+                width={48}
+                height={48}
+              />
+              <div className="flex flex-col font-medium text-white max-w-[140px]">
+                <h1 className="text-base 3xl:text-lg truncate">
+                  {user?.name ? toTitleCase(user.name) : "No Name"}
+                </h1>
+                <p className="text-sm 3xl:text-base text-text-light truncate">
+                  {user?.email || "Student"}
+                </p>
+              </div>
+
+              <div
+                className="absolute rounded-s-full h-full right-0 -mr-6 px-4 bg-secondary flex items-center justify-center cursor-pointer"
+                onClick={() => setDropdownOpen((prev) => !prev)}
+              >
+                <Ellipsis className="size-8" strokeWidth={2.5} color="black" />
+              </div>
+
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white text-black rounded-md shadow-lg z-50">
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <LogOut className="size-4" strokeWidth={2} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Nav Items */}
+            <ul className="font-sans flex flex-col gap-3 mt-12">
+              {NavItems.map(({ title, path, icon }) => (
                 <Link
                   key={title}
                   href={path}
                   className={clsx(
-                    "flex items-center gap-3 sm:gap-5 py-2 px-3 md:px-5 rounded-md ",
+                    "flex items-center gap-4 sm:gap-6 py-3 px-3 rounded-s-full",
                     pathname.startsWith(path)
-                      ? "text-black bg-secondary "
+                      ? "text-black bg-secondary -mr-3 lg:-mr-6"
                       : "text-white hover:bg-white/10",
                   )}
                 >
                   {icon}
-                  <span className="text-[11px] xs:text-xs font-bold lg:text-sm font-roboto">
+                  <span className="font-bold text-sm lg:text-base 3xl:text-lg font-roboto">
                     {title}
                   </span>
                 </Link>
               ))}
             </ul>
           </div>
-          <footer className="flex gap-2 p-3 border-t-2 border-white items-center justify-between text-white w-full">
-            <div className="flex gap-3 w-6/7">
-              <Image
-                src={user?.image || avatar}
-                className="w-6 xs:w-8 lg:w-10 rounded-full border border-white"
-                alt="Avatar"
-                width={40}
-                height={40}
-              />
-              <div className="flex flex-col font-medium truncate">
-                <h1 className="text-[10px] truncate xs:text-sm lg:text-[14px]">
-                  {user?.name || "No Name"}
-                </h1>
-                <p className="text-[8px] truncate xs:text-[10px] lg:text-[11px]">
-                  {user?.email || "No Email"}
-                </p>
-              </div>
-            </div>
-            <button onClick={() => signOut()}>
-              <LogOut className="w-4 xs:w-5 lg:w-6" strokeWidth={3} />
-            </button>
-          </footer>
+
+          <Link
+            href="/upload-project"
+            className="text-black rounded-4xl bg-linear-to-tr mx-1 px-4 pb-6 pt-8 font-roboto from-accent to-secondary shadow-md/20 cursor-pointer"
+          >
+            <CloudUpload className="size-8 3xl:size-10" />
+            <h1 className="text-base 3xl:text-lg font-bold mt-2">
+              Upload Project
+            </h1>
+            <p className="text-xs 3xl:text-sm font-medium">
+              Writing a chapter of your
+              <br /> academic journey
+            </p>
+          </Link>
         </nav>
       </aside>
     </>
