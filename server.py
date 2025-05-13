@@ -1,11 +1,43 @@
 import re
 from flask import Flask, render_template, request
-from pdf2image import convert_from_bytes
+import fitz  # PyMuPdf
 import easyocr
 import numpy as np
+from io import BytesIO
 
 app = Flask(__name__)
 reader = easyocr.Reader(['en'])
+
+def extract_title_authors_abstract_with_fitz(pdf_bytes):
+    title = ""
+    authors = ""
+    abstract = ""
+
+    try:
+        doc = fitz.open(stream=BytesIO(pdf_bytes))
+        if not doc.page_count:
+            return "Error: Empty PDF", "", ""
+
+        page = doc[0]  # Process the first page
+        text = page.get_text("text")
+        return "FITz Text:\n" + text, "", "" # Return raw text for debugging
+
+    except Exception as e:
+        return f"Error processing PDF with fitz: {e}", "", ""
+
+def extract_title_authors_abstract_basic_ocr(pdf_bytes):
+    try:
+        images = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
+        if not images:
+            return "Error: Could not convert PDF to image (basic OCR)", "", ""
+        image = images[0].convert("RGB")
+        np_image = np.array(image)
+        ocr_results = reader.readtext(np_image, detail=0, paragraph=False)
+        all_text = "\n".join(ocr_results) # Join with newline for better readability
+        return "OCR Text:\n" + all_text, "", "" # Return raw OCR text for debugging
+
+    except Exception as e:
+        return f"Error during basic OCR: {e}", "", ""
 
 @app.route('/')
 def index():
@@ -16,86 +48,24 @@ def upload():
     file = request.files['pdf']
 
     try:
-        images = convert_from_bytes(file.read())
-        all_text = []
+        pdf_bytes = file.read()
 
-        stop = False
-        for image in images:
-            if stop:
-                break
-            image = image.convert("RGB")
-            np_image = np.array(image)
-            ocr_results = reader.readtext(np_image, detail=1, paragraph=False)
+        # Try fitz first
+        fitz_output, _, _ = extract_title_authors_abstract_with_fitz(pdf_bytes)
+        print("FITz Output:\n", fitz_output)
+        if "Error" not in fitz_output and fitz_output.strip():
+            return f"<pre>{fitz_output}</pre>"
 
-            for bbox, text, conf in ocr_results:
-                if "keywords" in text.lower():
-                    stop = True
-                    break
-                all_text.append((bbox, text.strip()))
+        # Fallback to basic OCR if fitz fails or returns no text
+        ocr_output, _, _ = extract_title_authors_abstract_basic_ocr(pdf_bytes)
+        print("OCR Output:\n", ocr_output)
+        if "Error" not in ocr_output and ocr_output.strip():
+            return f"<pre>{ocr_output}</pre>"
 
-        # Sort top to bottom using Y coordinate
-        all_text.sort(key=lambda x: x[0][0][1])
-
-        # Group lines into blocks and record vertical gaps
-        grouped_lines = []
-        block_positions = []
-        last_y = None
-        current_block = []
-
-        for bbox, text in all_text:
-            y = bbox[0][1]
-            if last_y is not None and abs(y - last_y) > 20:
-                grouped_lines.append(current_block)
-                block_positions.append(last_y)
-                current_block = []
-            current_block.append(text)
-            last_y = y
-        if current_block:
-            grouped_lines.append(current_block)
-            block_positions.append(last_y)
-
-        # Identify the biggest gap between blocks
-        max_gap = 0
-        split_index = 1
-        for i in range(1, len(block_positions)):
-            gap = block_positions[i] - block_positions[i - 1]
-            if gap > max_gap:
-                max_gap = gap
-                split_index = i
-
-        # Step 1: Title = blocks before biggest gap
-        title_blocks = grouped_lines[:split_index]
-        title = ' '.join([' '.join(block) for block in title_blocks]).strip()
-
-        # Step 2: Remaining blocks = authors + abstract
-        remaining_blocks = grouped_lines[split_index:]
-
-        # Step 3: Find last block that contains 'ph' (end of authors)
-        last_email_block_index = max(
-            (i for i, block in enumerate(remaining_blocks)
-             if any('ph' in line.lower() for line in block)),
-            default=-1
-        )
-
-        if last_email_block_index == -1:
-            return "<h3 style='color: red;'>Error: Could not find 'ph' to identify abstract.</h3>"
-
-        # Step 4: Authors = from beginning of remaining_blocks to last 'ph'
-        authors_blocks = remaining_blocks[:last_email_block_index + 1]
-        authors = ' '.join([' '.join(block) for block in authors_blocks]).strip()
-
-        # Step 5: Abstract = after last 'ph' block
-        abstract_blocks = remaining_blocks[last_email_block_index + 1:]
-        abstract = ' '.join([' '.join(block) for block in abstract_blocks]).strip()
-
-        return f"""
-        <h3>Title</h3><p>{title}</p>
-        <h3>Authors</h3><p>{authors}</p>
-        <h3>Abstract</h3><p>{abstract}</p>
-        """
+        return "<h3 style='color: red;'>Could not extract any text from the PDF.</h3>"
 
     except Exception as e:
-        return f"<h3 style='color: red;'>Error: {str(e)}</h3>"
+        return f"<h3 style='color: red;'>Error during upload: {str(e)}</h3>"
 
 if __name__ == '__main__':
     app.run(debug=True)
