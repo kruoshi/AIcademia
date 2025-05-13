@@ -3,6 +3,7 @@ import { encodeText } from '@/lib/embedder';
 import { supabase } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const threshold = -0.35;
   const { query } = req.body;
 
   if (!query) return res.status(400).json({ error: 'Missing query' });
@@ -14,6 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   if (error) return res.status(500).json({ error });
+  
+  const filtered = (data ?? []).filter((item) => item.similarity_score >= threshold);
 
-  res.status(200).json(data);
+  res.status(200).json(filtered);
 }
