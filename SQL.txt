@@ -1,6 +1,7 @@
 -- Create extensions if they don't exist
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+DROP TABLE IF EXISTS public.capstone_embed CASCADE;
 
 -- Create or update the capstone_embed table with all required fields
 CREATE TABLE IF NOT EXISTS public.capstone_embed (
@@ -9,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.capstone_embed (
     keywords text[],
     embedding vector(384),
     fts tsvector,
-    created_at timestamptz DEFAULT now()
+    created_at timestamptz
 );
 
 -- Drop existing functions in correct order to avoid dependency issues
@@ -37,8 +38,7 @@ BEGIN
         c.keywords,
         (1 - (c.embedding <-> embed)) AS similarity_score
     FROM capstone_embed c
-    ORDER BY similarity_score DESC
-    LIMIT 5;
+    ORDER BY similarity_score DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -90,7 +90,8 @@ RETURNS TABLE (
     id uuid,
     title text,
     keywords text[],
-    combined_score float
+    combined_score float,
+    created_at timestamptz
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -99,29 +100,33 @@ BEGIN
         c.title,
         c.keywords,
         (similarity_weight * (1 - (c.embedding <-> query_embedding))) + 
-        (fts_weight * ts_rank(c.fts, websearch_to_tsquery('english', query_text))) AS combined_score
+        (fts_weight * ts_rank(c.fts, websearch_to_tsquery('english', query_text))) AS combined_score,
+        c.created_at
     FROM capstone_embed c
     WHERE 
         c.fts @@ websearch_to_tsquery('english', query_text)
-    ORDER BY combined_score DESC
-    LIMIT 5;
+    ORDER BY combined_score DESC;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Create a function to sync data from capstones to capstone_embed
 CREATE OR REPLACE FUNCTION sync_capstone_to_embed()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $$ 
 BEGIN
-    INSERT INTO capstone_embed (id, title, keywords)
-    VALUES (NEW.id, NEW.title, NEW.keywords)
+    INSERT INTO capstone_embed (id, title, keywords, created_at)
+    VALUES (NEW.id, NEW.title, NEW.keywords, NEW.created_at)
     ON CONFLICT (id) DO UPDATE
-    SET title = EXCLUDED.title,
-        keywords = EXCLUDED.keywords;
+    SET 
+        title = EXCLUDED.title,
+        keywords = EXCLUDED.keywords,
+        created_at = EXCLUDED.created_at;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger to maintain sync between tables
+-- Ensure the trigger for syncing is correctly created
+DROP TRIGGER IF EXISTS sync_capstone_trigger ON capstones;
+
 CREATE TRIGGER sync_capstone_trigger
 AFTER INSERT OR UPDATE ON capstones
 FOR EACH ROW EXECUTE FUNCTION sync_capstone_to_embed();

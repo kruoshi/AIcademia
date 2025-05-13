@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { data: projects, error } = await supabase
       .from('capstones')
-      .select('id, title, keywords');
+      .select('id, title, keywords, created_at');
 
     if (error) throw error;
     if (!projects || projects.length === 0) {

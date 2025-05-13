@@ -47,7 +47,7 @@ const SearchEngine: React.FC = () => {
 
     fetchSearchResults();
   }, [query]);
-
+  
   return (
     <>
       <div className="text-center md:pt-10">
@@ -94,27 +94,33 @@ const SearchEngine: React.FC = () => {
                 <SearchCardSkeleton />
               </li>
             ))
-          : searchResults.map((doc) => (
-              <Link
-                href={`/capstones/${doc.id}`}
-                key={doc.id}
-                className="block hover:opacity-90 transition cursor-pointer"
-              >
-                <li>
-                  <SearchCard
-                    id={doc.id}
-                    title={doc.title}
-                    specialization={doc.keywords?.[1] || "General"}
-                    course={doc.keywords?.[0] || "IT"}
-                    date={new Date(doc.created_at ?? "").toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                    })}
-                  />
-                </li>
-              </Link>
-            ))}
+          : searchResults.map((doc) => {
+              console.log("Document object:", doc); // Log the entire doc object
+              console.log("created_at raw value:", doc.created_at); // Log created_at
+              return (
+                <Link
+                  href={`/capstones/${doc.id}`}
+                  key={doc.id}
+                  className="block hover:opacity-90 transition cursor-pointer"
+                >
+                  <li>
+                    <SearchCard
+                      id={doc.id}
+                      title={doc.title}
+                      specialization={doc.keywords?.[1] || "General"}
+                      course={doc.keywords?.[0] || "IT"}
+                      date={new Date(doc.created_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    />
+                  </li>
+                </Link>
+              );
+            })}
       </ul>
+
 
 
       <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
