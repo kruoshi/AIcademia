@@ -24,28 +24,94 @@ const SearchEngine: React.FC = () => {
   const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isEmbedding, setIsEmbedding] = useState(false);
+  const [embeddingStatus, setEmbeddingStatus] = useState("");
 
+  // Run embedding ingestion on component mount
   useEffect(() => {
-    if (!query) return;
+    const runInitialEmbedding = async () => {
+      setIsEmbedding(true);
+      setEmbeddingStatus("Checking embeddings...");
+      
+      try {
+        // Check if embeddings need to be updated
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
 
-    const fetchSearchResults = async () => {
-      const res = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
+        // Count capstones vs embeddings
+        const { count: capstoneCount } = await supabase
+          .from('capstones')
+          .select('*', { count: 'exact', head: true });
 
-      const results = await res.json();
-      if (res.ok) {
-        setSearchResults(results);
-      } else {
-        console.error(results.error);
+        const { count: embedCount } = await supabase
+          .from('capstone_embed')
+          .select('*', { count: 'exact', head: true });
+
+        if (capstoneCount === 0) {
+          setEmbeddingStatus("No capstones found to embed");
+          return;
+        }
+
+        if (embedCount === 0 || embedCount < capstoneCount) {
+          setEmbeddingStatus(`Updating embeddings (${embedCount || 0}/${capstoneCount})...`);
+          
+          const response = await fetch('/api/embed', {
+            method: 'POST'
+          });
+          
+          const data = await response.json();
+          setEmbeddingStatus(`Embeddings updated: ${data.count} items processed`);
+        } else {
+          setEmbeddingStatus("Embeddings up to date");
+        }
+      } catch (error) {
+        console.error("Embedding error:", error);
+        setEmbeddingStatus("Error updating embeddings");
+      } finally {
+        setIsEmbedding(false);
       }
     };
 
-    fetchSearchResults();
+    runInitialEmbedding();
+  }, []);
+
+  useEffect(() => {
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+
+    const fetchSearchResults = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        const results = await res.json();
+        if (res.ok) {
+          setSearchResults(results);
+        } else {
+          console.error(results.error);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      fetchSearchResults();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
   }, [query]);
   
   return (
@@ -76,6 +142,9 @@ const SearchEngine: React.FC = () => {
             className="placeholder:text-text-dark pl-8 pr-2 py-1 w-60 sm:w-100 ring-2 ring-secondary focus:outline-none rounded-md border-secondary-dark text-[10px] xs:text-[11px] sm:text-xs sm:pl-10 xl:pl-14 md:text-sm xl:text-base font-medium font-roboto auto-complete-none"
           />
         </div>
+        {isEmbedding && (
+          <p className="text-xs text-gray-500 mt-2">{embeddingStatus}</p>
+        )}
       </div>
 
       <div className="font-roboto flex flex-wrap items-center mx-auto sm:w-5/6 justify-center gap-2 mt-3 sm:mt-5 font-medium text-[10px] xs:text-[11px] sm:text-xs md:text-sm ">
@@ -94,38 +163,34 @@ const SearchEngine: React.FC = () => {
                 <SearchCardSkeleton />
               </li>
             ))
-          : searchResults.map((doc) => {
-              console.log("Document object:", doc); // Log the entire doc object
-              console.log("created_at raw value:", doc.created_at); // Log created_at
-              return (
-                <Link
-                  href={`/capstones/${doc.id}`}
-                  key={doc.id}
-                  className="block hover:opacity-90 transition cursor-pointer"
-                >
-                  <li>
-                    <SearchCard
-                      id={doc.id}
-                      title={doc.title}
-                      specialization={doc.keywords?.[1] || "General"}
-                      course={doc.keywords?.[0] || "IT"}
-                      date={new Date(doc.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    />
-                  </li>
-                </Link>
-              );
-            })}
+          : searchResults.map((doc) => (
+              <Link
+                href={`/capstones/${doc.id}`}
+                key={doc.id}
+                className="block hover:opacity-90 transition cursor-pointer"
+              >
+                <li>
+                  <SearchCard
+                    id={doc.id}
+                    title={doc.title}
+                    specialization={doc.keywords?.[1] || "General"}
+                    course={doc.keywords?.[0] || "IT"}
+                    date={new Date(doc.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  />
+                </li>
+              </Link>
+            ))}
       </ul>
 
-
-
-      <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
-        Show More
-      </button>
+      {searchResults.length > 0 && (
+        <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
+          Show More
+        </button>
+      )}
     </>
   );
 };

@@ -3,6 +3,11 @@ import { encodeText } from '@/lib/embedder';
 import { supabase } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'GET') {
+    // Return simple status for GET requests
+    return res.status(200).json({ message: 'Embedding endpoint ready' });
+  }
+
   try {
     const { data: projects, error } = await supabase
       .from('capstones')
@@ -26,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           title: project.title,
           keywords: project.keywords,
           embedding,
+          created_at: project.created_at // Make sure to include created_at
         });
 
       if (upsertError) {
