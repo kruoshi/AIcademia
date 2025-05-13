@@ -1,8 +1,13 @@
 "use client";
 import { SidebarProvider } from "./sidebar-context";
+import { SummaryProvider } from "./summary-context";
 
-const Providers = ({ children }: { children: React.ReactNode }) => {
-  return <SidebarProvider>{children}</SidebarProvider>;
+const Provider = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SidebarProvider>
+      <SummaryProvider>{children}</SummaryProvider>
+    </SidebarProvider>
+  );
 };
 
-export default Providers;
+export default Provider;

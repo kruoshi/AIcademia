@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import Providers from "@/lib/context/provider";
+import Summary from "@/components/layout/summary";
 
 const arima = Arima({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
           {User ? (
             <div className="flex ">
               <Sidebar />
+              <Summary />
               <div className="min-h-screen w-screen">
                 <Header />
                 <main className="bg-background h-full py-6 lg:py-14 pr-6 pl-6 lg:pr-14 lg:pl-86 3xl:pl-99">
