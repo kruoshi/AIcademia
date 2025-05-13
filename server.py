@@ -19,34 +19,44 @@ def extract_title_authors_abstract_with_fitz(pdf_bytes):
         text = page.get_text("text")
         lines = [line.strip() for line in text.split('\n') if line.strip()]
 
-        # Title
-        title = lines[0] if lines else ""
-
-        # Authors and email lines
-        authors = []
-        last_email_index = -1
+        # Find author emails and store author lines
+        author_lines = []
+        email_indices = []
         for i, line in enumerate(lines):
             if re.search(r'@[\w.]+', line):
+                email_indices.append(i)
                 if i > 0 and not re.search(r'@[\w.]+', lines[i - 1]):
-                    authors.append(lines[i - 1])
-                authors.append(line)
-                last_email_index = i
+                    author_lines.append(lines[i - 1])
+                author_lines.append(line)
 
-        author_block = "\n".join(authors)
+        # Get all lines before the first email line
+        raw_title_lines = lines[:email_indices[0]] if email_indices else lines[:1]
 
-        # Extract Abstract
+        # Filter out lines that look like author names
+        def is_probable_name(line):
+            words = line.split()
+            cap_count = sum(1 for word in words if word.istitle())
+            return line.isupper() or (cap_count >= 2 and len(words) <= 5)
+
+        title_lines = [line for line in raw_title_lines if not is_probable_name(line)]
+        title = " ".join(title_lines).strip()
+
+        # Authors block
+        author_block = "\n".join(author_lines)
+
+        # Extract abstract (ends at Keywords, 1., or Introduction)
         abstract_lines = []
-        i = last_email_index + 1
+        i = email_indices[-1] + 1 if email_indices else 1
         while i < len(lines):
             line = lines[i]
-            if re.match(r'^(Keywords?|1\.|Introduction)', line, re.IGNORECASE):
+            if re.search(r'\bkeywords?\b', line, re.IGNORECASE) or re.match(r'^(1\.|Introduction)', line, re.IGNORECASE):
                 break
             abstract_lines.append(line)
             i += 1
 
-        abstract = " ".join(abstract_lines).strip()
+        abstract = "<br>".join(abstract_lines).strip()  # use <br> for line breaks
 
-        return "", title.strip(), author_block.strip(), abstract
+        return "", title, author_block.strip(), abstract
 
     except Exception as e:
         return f"Error processing PDF with fitz: {e}", "", "", ""
@@ -75,17 +85,17 @@ def upload():
     try:
         pdf_bytes = file.read()
 
-        # Try fitz first
+        # Try PyMuPDF (fitz) first
         error, title, authors, abstract = extract_title_authors_abstract_with_fitz(pdf_bytes)
         if not error and (title or authors or abstract):
             return f"""
             <h2>Extracted Information</h2>
             <strong>Title:</strong><br>{title}<br><br>
             <strong>Authors:</strong><br><pre>{authors}</pre><br>
-            <strong>Abstract:</strong><br><pre>{abstract}</pre>
+            <strong>Abstract:</strong><br>{abstract}
             """
 
-        # Fallback to basic OCR if fitz fails or is empty
+        # Fallback to basic OCR if fitz fails
         ocr_output, _, _, _ = extract_title_authors_abstract_basic_ocr(pdf_bytes)
         if "Error" not in ocr_output and ocr_output.strip():
             return f"<pre>{ocr_output}</pre>"
