@@ -27,6 +27,13 @@ const SearchEngine: React.FC = () => {
   const [isEmbedding, setIsEmbedding] = useState(false);
   const [embeddingStatus, setEmbeddingStatus] = useState("");
 
+  useEffect(() => {
+    fetch('/api/ingest')
+      .then(res => res.json())
+      .then(data => console.log('Ingest result:', data))
+      .catch(console.error);
+  }, []);
+    
   // Run embedding ingestion on component mount
   useEffect(() => {
     const runInitialEmbedding = async () => {
