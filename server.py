@@ -1,4 +1,5 @@
 import re
+import json
 from flask import Flask, render_template, request
 import fitz  # PyMuPDF
 import easyocr
@@ -81,6 +82,28 @@ def extract_title_authors_abstract_basic_ocr(pdf_bytes):
     except Exception as e:
         return f"Error during basic OCR: {e}", "", "", ""
 
+# Convert author block to JSON format
+def parse_author_block_to_json(author_block):
+    lines = [line.strip() for line in author_block.split("\n") if line.strip()]
+    authors = []
+    i = 0
+    while i < len(lines):
+        name_line = lines[i]
+        email_line = lines[i + 1] if i + 1 < len(lines) else ""
+        email_match = re.search(r'[\w\.-]+@[\w\.-]+', email_line)
+        email = email_match.group() if email_match else ""
+
+        authors.append({
+            "name": name_line,
+            "email": email,
+            "organization": "College of Information and Computing Sciences",
+            "university": "University of Santo Tomas"
+        })
+
+        i += 2  # move to next name/email pair
+
+    return authors
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -93,20 +116,25 @@ def upload():
         pdf_bytes = file.read()
 
         # Try extracting with fitz first
-        error, title, authors, abstract = extract_title_authors_abstract_with_fitz(pdf_bytes)
-        if not error and (title or authors or abstract):
+        error, title, authors_block, abstract = extract_title_authors_abstract_with_fitz(pdf_bytes)
+        if not error and (title or authors_block or abstract):
+            # Convert authors block to JSON
+            authors_json = parse_author_block_to_json(authors_block)
+
             # Save to Supabase
             data = {
                 "title": title,
-                "authors": authors,
+                "authors": json.dumps(authors_json),  # Save JSON as string
                 "abstract": abstract
             }
             supabase.table("documents").insert(data).execute()
 
+            authors_html = "<pre>" + json.dumps(authors_json, indent=4) + "</pre>"
+
             return f"""
             <h2>Extracted Information</h2>
             <strong>Title:</strong><br>{title}<br><br>
-            <strong>Authors:</strong><br><pre>{authors}</pre><br>
+            <strong>Authors (JSON):</strong><br>{authors_html}<br>
             <strong>Abstract:</strong><br>{abstract}<br><br>
             <em>✅ Successfully saved to Supabase.</em>
             """
