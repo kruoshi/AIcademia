@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import SearchCard from "@/components/ui/SearchCard";
 import Keywords from "@/components/ui/Keywords";
 import { useEffect, useState } from "react";
+import SearchCardSkeleton from "@/components/ui/SkeletonSearchCard";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ type CapstoneResult = {
 const SearchEngine: React.FC = () => {
   const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!query) return;
@@ -86,30 +88,32 @@ const SearchEngine: React.FC = () => {
       </div>
 
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
-        {searchResults.map((doc) => (
-          <Link
-            href={`/capstones/${doc.id}`}
-            key={doc.id}
-            className="block hover:opacity-90 transition cursor-pointer"
-          >
-            <li>
-              <SearchCard
-                id={doc.id}
-                title={doc.title}
-                specialization={doc.keywords?.[1] || "General"}
-                course={doc.keywords?.[0] || "IT"}
-                date={new Date(doc.created_at ?? "").toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                })}
-              />
-              {/* ✅ Add score display */}
-              <p className="text-sm text-center text-gray-500 mt-1">
-                Score: {(doc.similarity_score * 100).toFixed(2)}%
-              </p>
-            </li>
-          </Link>
-        ))}
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <li key={i}>
+                <SearchCardSkeleton />
+              </li>
+            ))
+          : searchResults.map((doc) => (
+              <Link
+                href={`/capstones/${doc.id}`}
+                key={doc.id}
+                className="block hover:opacity-90 transition cursor-pointer"
+              >
+                <li>
+                  <SearchCard
+                    id={doc.id}
+                    title={doc.title}
+                    specialization={doc.keywords?.[1] || "General"}
+                    course={doc.keywords?.[0] || "IT"}
+                    date={new Date(doc.created_at ?? "").toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                    })}
+                  />
+                </li>
+              </Link>
+            ))}
       </ul>
 
 
