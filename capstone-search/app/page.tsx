@@ -34,7 +34,6 @@ export default function Home() {
         {results.map((result, i) => (
           <li key={i} className="border p-4 rounded">
             <h2 className="text-xl font-semibold">{result.title}</h2>
-            <p className="text-sm text-gray-600">Keywords: {result.keywords}</p>
             <p className="text-xs text-gray-500">Score: {result.similarity_score?.toFixed(3)}</p>
           </li>
         ))}
