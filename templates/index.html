@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF OCR with EasyOCR</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+    }
+    h2 {
+      color: #333;
+    }
+    pre {
+      background: #f8f8f8;
+      padding: 1rem;
+      white-space: pre-wrap;
+      border-left: 4px solid #ccc;
+    }
+    #loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .spinner {
+      margin: 20px auto;
+      width: 50px;
+      height: 50px;
+      border: 5px solid lightgray;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h2>Upload a PDF File to Extract Text</h2>
+
+  <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+    <input type="file" name="pdf" accept=".pdf" required>
+    <button type="submit">Extract Text</button>
+  </form>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Processing your PDF... Please wait.</p>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent normal form submission
+      loading.style.display = 'block'; // Show loading spinner
+      result.innerHTML = ''; // Clear previous result
+
+      const formData = new FormData(form);
+
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        loading.style.display = 'none'; // Hide spinner
+        result.innerHTML = data; // Show extracted text
+      })
+      .catch(error => {
+        loading.style.display = 'none';
+        result.innerHTML = <p style="color:red;">Error: ${error}</p>;
+      });
+    });
+  </script>
+
+</body>
+</html>
