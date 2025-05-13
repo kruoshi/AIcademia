@@ -70,7 +70,7 @@ const AcademicDatabase = () => {
         <p className="font-bold text-text font-roboto mb-4 text-base sm:text-lg xl:text-xl 2xl:text-2xl">
           Top-Cited
         </p>
-        <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-0.5 font-roboto">
+        <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1 font-roboto">
           {DocItems.map((doc, index) => (
             <li key={doc.id}>
               <CitedCard id={doc.id} title={doc.title} index={index + 1} />
