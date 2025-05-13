@@ -5,10 +5,16 @@ import easyocr
 import numpy as np
 from io import BytesIO
 from pdf2image import convert_from_bytes
+from supabase import create_client, Client
 
 app = Flask(__name__)
 reader = easyocr.Reader(['en'])
 
+SUPABASE_URL = ""
+SUPABASE_KEY = ""
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Extraction function using PyMuPDF
 def extract_title_authors_abstract_with_fitz(pdf_bytes):
     try:
         doc = fitz.open(stream=BytesIO(pdf_bytes))
@@ -54,13 +60,14 @@ def extract_title_authors_abstract_with_fitz(pdf_bytes):
             abstract_lines.append(line)
             i += 1
 
-        abstract = "<br>".join(abstract_lines).strip()  # use <br> for line breaks
+        abstract = "<br>".join(abstract_lines).strip()
 
         return "", title, author_block.strip(), abstract
 
     except Exception as e:
         return f"Error processing PDF with fitz: {e}", "", "", ""
 
+# Fallback basic OCR method
 def extract_title_authors_abstract_basic_ocr(pdf_bytes):
     try:
         images = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
@@ -85,17 +92,26 @@ def upload():
     try:
         pdf_bytes = file.read()
 
-        # Try PyMuPDF (fitz) first
+        # Try extracting with fitz first
         error, title, authors, abstract = extract_title_authors_abstract_with_fitz(pdf_bytes)
         if not error and (title or authors or abstract):
+            # Save to Supabase
+            data = {
+                "title": title,
+                "authors": authors,
+                "abstract": abstract
+            }
+            supabase.table("documents").insert(data).execute()
+
             return f"""
             <h2>Extracted Information</h2>
             <strong>Title:</strong><br>{title}<br><br>
             <strong>Authors:</strong><br><pre>{authors}</pre><br>
-            <strong>Abstract:</strong><br>{abstract}
+            <strong>Abstract:</strong><br>{abstract}<br><br>
+            <em>✅ Successfully saved to Supabase.</em>
             """
 
-        # Fallback to basic OCR if fitz fails
+        # Fallback to basic OCR
         ocr_output, _, _, _ = extract_title_authors_abstract_basic_ocr(pdf_bytes)
         if "Error" not in ocr_output and ocr_output.strip():
             return f"<pre>{ocr_output}</pre>"
