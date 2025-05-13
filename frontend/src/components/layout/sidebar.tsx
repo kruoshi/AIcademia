@@ -61,7 +61,7 @@ const Sidebar = () => {
                     "flex items-center gap-4 sm:gap-6 py-3 px-3 rounded-s-full",
                     pathname.startsWith(path)
                       ? "text-black bg-secondary -mr-3 lg:-mr-6"
-                      : "text-white hover:bg-white/10"
+                      : "text-white hover:bg-white/10 -mr-3 lg:-mr-6"
                   )}
                 >
                   {icon}
