@@ -2,12 +2,14 @@ type CardProps = {
   id: string;
   title: string;
   index: number;
+  onClick?: () => void;
 };
 
-const CitedCard: React.FC<CardProps> = ({ id, title, index }) => {
+const CitedCard: React.FC<CardProps> = ({ id, title, index, onClick }) => {
   return (
     <div
       key={id}
+      onClick={onClick}
       className="cursor-pointer flex items-center bg-white shadow-xs/5 py-3 font-roboto font-medium h-15 xl:h-20"
     >
       <div className="font-roboto text-lg xl:text-xl font-semibold text-text px-8">
