@@ -23,22 +23,26 @@ const SearchEngine: React.FC = () => {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+    if (!query) return;
 
-      const { data, error } = await supabase
-        .from("capstones")
-        .select("id, slug, title, keywords, created_at")
-        .ilike("title", `%${query}%`);
+    const fetchSearchResults = async () => {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
 
-      if (!error && data) setSearchResults(data as CapstoneResult[]);
-      else console.error(error);
+      const results = await res.json();
+      if (res.ok) {
+        setSearchResults(results);
+      } else {
+        console.error(results.error);
+      }
     };
 
-    fetchRecommendations();
+    fetchSearchResults();
   }, [query]);
 
   return (
