@@ -1,0 +1,127 @@
+-- Create extensions if they don't exist
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Create or update the capstone_embed table with all required fields
+CREATE TABLE IF NOT EXISTS public.capstone_embed (
+    id uuid PRIMARY KEY REFERENCES capstones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    title text NOT NULL,
+    keywords text[],
+    embedding vector(384),
+    fts tsvector,
+    created_at timestamptz DEFAULT now()
+);
+
+-- Drop existing functions in correct order to avoid dependency issues
+DROP FUNCTION IF EXISTS hybrid_capstone_search(vector,text,float,float);
+DROP FUNCTION IF EXISTS vector_capstone_search(vector);
+DROP FUNCTION IF EXISTS hybrid_project_search(vector, text);
+DROP FUNCTION IF EXISTS vector_project_search(vector);
+DROP TRIGGER IF EXISTS tsvectorupdate ON capstone_embed;
+DROP FUNCTION IF EXISTS public.projects_fts_trigger();
+DROP FUNCTION IF EXISTS public.capstone_fts_trigger();
+
+-- Recreate the vector search function with correct types
+CREATE OR REPLACE FUNCTION vector_capstone_search(embed vector)
+RETURNS TABLE (
+    id uuid,
+    title text,
+    keywords text[],
+    similarity_score float
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.id,
+        c.title,
+        c.keywords,
+        (1 - (c.embedding <-> embed)) AS similarity_score
+    FROM capstone_embed c
+    ORDER BY similarity_score DESC
+    LIMIT 5;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Update the FTS trigger function
+CREATE OR REPLACE FUNCTION public.capstone_fts_trigger()
+RETURNS trigger AS $$
+BEGIN
+    new.fts := to_tsvector('english', 
+        coalesce(new.title, '') || ' ' || 
+        array_to_string(coalesce(new.keywords, '{}'::text[]), ' ')
+    );
+    return new;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Recreate the trigger on the table
+CREATE TRIGGER tsvectorupdate
+BEFORE INSERT OR UPDATE ON public.capstone_embed
+FOR EACH ROW EXECUTE FUNCTION public.capstone_fts_trigger();
+
+-- Create or recreate the embedding index
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'projects_embedding_idx') THEN
+        EXECUTE 'DROP INDEX projects_embedding_idx';
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'capstone_embedding_idx') THEN
+        EXECUTE 'DROP INDEX capstone_embedding_idx';
+    END IF;
+    
+    CREATE INDEX capstone_embedding_idx ON capstone_embed USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+END $$;
+
+-- Create GIN index for full-text search
+CREATE INDEX IF NOT EXISTS capstone_fts_idx ON capstone_embed USING GIN (fts);
+
+-- Create GIN index for keywords array
+CREATE INDEX IF NOT EXISTS capstone_keywords_idx ON capstone_embed USING GIN (keywords);
+
+-- Recreate the hybrid search function with proper parameter types
+CREATE OR REPLACE FUNCTION hybrid_capstone_search(
+    query_embedding vector(384),
+    query_text text,
+    similarity_weight float DEFAULT 0.5,
+    fts_weight float DEFAULT 0.5
+)
+RETURNS TABLE (
+    id uuid,
+    title text,
+    keywords text[],
+    combined_score float
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.id,
+        c.title,
+        c.keywords,
+        (similarity_weight * (1 - (c.embedding <-> query_embedding))) + 
+        (fts_weight * ts_rank(c.fts, websearch_to_tsquery('english', query_text))) AS combined_score
+    FROM capstone_embed c
+    WHERE 
+        c.fts @@ websearch_to_tsquery('english', query_text)
+    ORDER BY combined_score DESC
+    LIMIT 5;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a function to sync data from capstones to capstone_embed
+CREATE OR REPLACE FUNCTION sync_capstone_to_embed()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO capstone_embed (id, title, keywords)
+    VALUES (NEW.id, NEW.title, NEW.keywords)
+    ON CONFLICT (id) DO UPDATE
+    SET title = EXCLUDED.title,
+        keywords = EXCLUDED.keywords;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to maintain sync between tables
+CREATE TRIGGER sync_capstone_trigger
+AFTER INSERT OR UPDATE ON capstones
+FOR EACH ROW EXECUTE FUNCTION sync_capstone_to_embed();
