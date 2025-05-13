@@ -1,85 +1,12 @@
 import { Search } from "lucide-react";
 import SearchCard from "@/components/ui/SearchCard";
 import Keywords from "@/components/ui/Keywords";
-
-type DocInfo = {
-  id: string;
-  title: string;
-  specialization: string;
-  course: string;
-  date: string;
-};
-
-const DocCard: DocInfo[] = [
-  {
-    id: "1",
-    title:
-      "AquaFusion: Time-Dynamic Fish Feeding Mechanism with Real-time Water Quality Monitoring",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "2",
-    title:
-      "Marilag: An Intelligent Cacao Bean Segregation System Based on Extracted Features and Image Recognition",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "5",
-    title: "Capstone Automated Waste Segregator Version 3",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "3",
-    title:
-      "VISIONARY: Computer Vision-Enhanced Real-Time Illegal Parking Detection and Monitoring System",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "4",
-    title:
-      "Automated Heat Stress Monitoring and Management System for Poultry Farming",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-
-  {
-    id: "6",
-    title:
-      "RoboGuide: A Robot Assistant for Guiding Customers to their Desired Item in Retail Shops",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "7",
-    title:
-      "FishWatch: Automated Water Monitoring and Fish Kill Prediction System",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-  {
-    id: "8",
-    title: "FRESHKO: Fruits and Vegetables Spoilage Detection System",
-    specialization: "Automation",
-    course: "BS IT",
-    date: "November 2023",
-  },
-];
+import DocItems from "@/lib/constants/DocItems";
 
 const SearchEngine = () => {
   return (
     <>
-      <div className="text-center md:pt-10">
+      <div className="text-center md:pt-8">
         <h1 className="font-arima font-bold text-xl xs:text-2xl sm:text-3xl md:text-4xl xl:text-5xl">
           Discover <span className="text-secondary-dark">Academic</span> works
           <br />
@@ -114,8 +41,8 @@ const SearchEngine = () => {
         <Keywords />
       </div>
 
-      <ul className=" mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
-        {DocCard.map((doc) => (
+      <ul className=" mt-10 columns-1 sm:columns-2 2xl:columns-3 4xl:columns-4 sm:px-5 xl:px-10 2xl:px-20 gap-3 pb-5">
+        {DocItems.map((doc) => (
           <li key={doc.id}>
             <SearchCard
               id={doc.id}
@@ -127,9 +54,6 @@ const SearchEngine = () => {
           </li>
         ))}
       </ul>
-      <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
-        Show More
-      </button>
     </>
   );
 };

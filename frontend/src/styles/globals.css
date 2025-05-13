@@ -15,4 +15,9 @@
   --font-arima: var(--font-arima);
   --breakpoint-xs: 25rem;
   --breakpoint-3xl: 100rem;
+  --breakpoint-4xl: 125rem;
+}
+
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }
