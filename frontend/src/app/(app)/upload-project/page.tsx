@@ -3,17 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import {
-  ChevronRight,
-  CircleHelp,
-  CloudUpload,
-  FileText,
-  Info,
-  UsersRound,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-} from "lucide-react"
+import { CircleHelp, CloudUpload, FileText, Info, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import KeywordProcessor from "@/components/keyword-processor"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useSession } from "next-auth/react"
@@ -46,7 +36,6 @@ export default function UploadProjectPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const { data: session } = useSession()
   const [tasks, setTasks] = useState<Task[]>([
-    { name: "Invite Teammates", status: "incomplete" },
     { name: "Project Details", status: "incomplete" },
     { name: "Upload Project", status: "incomplete" },
   ])
@@ -394,18 +383,6 @@ export default function UploadProjectPage() {
         </div>
       )}
 
-      <div className="mt-8 bg-linear-to-br from-secondary-dark/90 to-secondary p-8 rounded-lg font-roboto font-semibold text-lg">
-        <div className="flex gap-4 items-center">
-          <Info className="size-8" />
-          <span className="text-xl font-extrabold">Upload Progression</span>
-        </div>
-        <p className="mt-4 text-lg">
-          You have chosen to upload a project and for that you need to complete the forms in this page. The different
-          forms can be completed in any order. <br />
-          Once complete, the project can be viewed in your profile
-        </p>
-      </div>
-
       <div className="flex flex-col md:flex-row gap-3 mt-10 font-roboto">
         <div className="w-full md:w-1/4 h-full">
           <h1 className="font-bold text-xl">Things you need to do</h1>
@@ -432,21 +409,6 @@ export default function UploadProjectPage() {
         </div>
 
         <div className="w-full md:w-3/4 flex flex-col gap-5">
-          <div className="bg-white rounded-lg p-10 shadow-md/10">
-            <header className="flex justify-between">
-              <div className="flex items-center gap-6">
-                <UsersRound className="size-8" strokeWidth={3} />
-                <h1 className="text-xl font-bold">Invite Teammates</h1>
-              </div>
-              <CircleHelp strokeWidth={2} className="size-6" />
-            </header>
-            <p className="mt-5 mb-2 text-text-dark font-semibold">You do not have any teammates yet</p>
-            <button className="flex gap-2 bg-secondary text-sm rounded-full px-5 py-2 font-bold">
-              ADD TEAMMATE
-              <ChevronRight className="size-5" />
-            </button>
-          </div>
-
           <div className="bg-white rounded-lg p-10 shadow-md/10">
             <header className="flex justify-between">
               <div className="flex items-center gap-6">
@@ -625,4 +587,3 @@ export default function UploadProjectPage() {
     </>
   )
 }
-  
