@@ -1,3 +1,4 @@
+import { GraduationCap, Calendar } from "lucide-react";
 type CardProps = {
   id: string;
   title: string;
@@ -16,24 +17,33 @@ const LatestCard: React.FC<CardProps> = ({
   return (
     <div
       key={id}
-      className="bg-white rounded-sm shadow-md/5 py-2 sm:py-3 px-3 font-roboto cursor-pointer flex flex-col gap-2.5 justify-between text-center items-center h-full"
+      className="bg-white rounded-sm shadow-md/5 p-3 lg:p-5 font-roboto cursor-pointer flex flex-col justify-between h-full border-t-5 border-secondary-dark"
     >
-      <h1 className="text-xs text-text sm:text-sm 3xl:text-base font-semibold pr-3 mt-2 line-clamp-4 sm:line-clamp-3 ">
-        {title}
-      </h1>
-      <table className="font-roboto table-auto shadow-xs border-gray-300 w-full font-semibold text-[11px] sm:text-xs 3xl:text-sm">
-        <tbody>
-          <tr className="bg-gray-100 border-b border-gray-100 ">
-            <td className="px-4 py-1 text-text">{course}</td>
-          </tr>
-          <tr className="border-b border-gray-100">
-            <td className="px-4 py-1 text-text">{specialization}</td>
-          </tr>
-          <tr className="bg-gray-100 border-b border-gray-100">
-            <td className="px-4 py-1 text-text">{date}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div>
+        <span className="text-text-dark font-semibold text-[10px] sm:text-[11px] md:text-xs xl:text-base">
+          {specialization.toUpperCase()}
+        </span>
+        <h1 className="text-[11px] font-medium sm:text-xs md:text-sm xl:text-base mt-2">
+          {title}
+        </h1>
+      </div>
+
+      <div className="border-t pt-2 border-text-dark/40 flex justify-between items-center text-[10px] sm:text-[11px] md:text-sm font-semibold text-text-dark ">
+        <div className="flex gap-1.5 items-center ">
+          <GraduationCap className="size-4 md:size-5 " strokeWidth={2.5} />
+          <span>
+            BS{" "}
+            {course
+              .split(" ")
+              .map((word) => word[0].toUpperCase())
+              .join("")}
+          </span>
+        </div>
+        <div className="flex gap-1.5 items-center ">
+          <span>{date}</span>
+          <Calendar className="size-3 md:size-4 " strokeWidth={3} />
+        </div>
+      </div>
     </div>
   );
 };

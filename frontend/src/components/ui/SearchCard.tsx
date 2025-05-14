@@ -6,7 +6,6 @@ import {
   Clock4,
   CircleCheckBig,
 } from "lucide-react";
-import { useSummary } from "@/lib/context/summary-context";
 
 type CardProps = {
   id: string;
@@ -23,15 +22,13 @@ const SearchCard: React.FC<CardProps> = ({
   course,
   date,
 }) => {
-  const { openSummary } = useSummary();
   return (
     <div
       key={id}
       className="break-inside-avoid border border-grey bg-white rounded-xl shadow-md/15 p-4  h-auto mb-4 cursor-pointer"
-      onClick={openSummary}
     >
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-1.5 text-text text-[10px] xs:text-[11px] sm:text-xs xl:text-sm font-semibold">
+      <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center gap-1.5 text-text text-[10px] xs:text-[11px] sm:text-xs xl:text-sm font-semibold ">
           <span className="flex gap-1.5 items-center bg-accent/10 px-2.5 py-0.5 rounded-full ">
             <GraduationCap
               className="size-3.5 md:size-4.5 xl:size-5  "

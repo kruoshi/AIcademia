@@ -65,7 +65,7 @@ const Sidebar = () => {
                   )}
                 >
                   {icon}
-                  <span className="font-bold text-sm lg:text-base 3xl:text-lg font-roboto">
+                  <span className="font-bold text-xs sm:text-sm lg:text-base 3xl:text-lg font-roboto">
                     {title}
                   </span>
                 </Link>
@@ -74,15 +74,14 @@ const Sidebar = () => {
           </div>
           <Link
             href="/upload-project"
-            className="text-black rounded-4xl bg-linear-to-tr mx-1 px-4 pb-6 pt-8 font-roboto from-accent to-secondary shadow-md/20 cursor-pointer"
+            className="text-black rounded-4xl bg-linear-to-tr mx-2 px-4 pb-4 pt-6 font-roboto from-secondary-dark to-secondary shadow-md/20 cursor-pointer"
           >
             <CloudUpload className="size-8 3xl:size-10" />
-            <h1 className="text-base 3xl:text-lg font-bold mt-2">
+            <h1 className="text-sm 3xl:text-lg font-bold mt-2">
               Upload Project
             </h1>
-            <p className="text-xs 3xl:text-sm font-medium">
-              Writing a chapter of your
-              <br /> academic journey
+            <p className="text-[10px] 3xl:text-sm font-semibold">
+              Writing a chapter of your academic journey
             </p>
           </Link>
         </nav>
