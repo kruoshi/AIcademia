@@ -24,135 +24,145 @@ type CapstoneResult = {
 };
 
 const SearchEngine: React.FC = () => {
-const [query, setQuery] = useState("");
-const [loading, setLoading] = useState(false);
-const [isEmbedding, setIsEmbedding] = useState(false);
-const [embeddingStatus, setEmbeddingStatus] = useState("");
-const [selectedCapstone, setSelectedCapstone] = useState<CapstoneResult | null>(null);
-const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isEmbedding, setIsEmbedding] = useState(false);
+  const [embeddingStatus, setEmbeddingStatus] = useState("");
+  const [selectedCapstone, setSelectedCapstone] = useState<
+    CapstoneResult | null
+  >(null);
+  const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
 
-// Run ingestion on mount
-useEffect(() => {
-  fetch('/api/ingest')
-    .then(res => res.json())
-    .then(data => console.log('Ingest result:', data))
-    .catch(console.error);
-}, []);
+  // Run ingestion on mount
+  useEffect(() => {
+    fetch("/api/ingest")
+      .then((res) => res.json())
+      .then((data) => console.log("Ingest result:", data))
+      .catch(console.error);
+  }, []);
 
-// Run embedding check on mount
-useEffect(() => {
-  const runInitialEmbedding = async () => {
-    setIsEmbedding(true);
-    setEmbeddingStatus("Checking embeddings...");
+  // Run embedding check on mount
+  useEffect(() => {
+    const runInitialEmbedding = async () => {
+      setIsEmbedding(true);
+      setEmbeddingStatus("Checking embeddings...");
 
-    try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-
-      const { count: capstoneCount } = await supabase
-        .from('capstones')
-        .select('*', { count: 'exact', head: true });
-
-      const { count: embedCount } = await supabase
-        .from('capstones')
-        .select('*', { count: 'exact', head: true });
-
-
-      if (capstoneCount === 0) {
-        setEmbeddingStatus("No capstones found to embed");
-        return;
-      }
-
-      if (embedCount === 0 || embedCount < capstoneCount) {
-        setEmbeddingStatus(`Updating embeddings (${embedCount || 0}/${capstoneCount})...`);
-        const response = await fetch('/api/embed', { method: 'POST' });
-        const data = await response.json();
-        setEmbeddingStatus(`Embeddings updated: ${data.count} items processed`);
-      } else {
-        setEmbeddingStatus("Embeddings up to date");
-      }
-    } catch (error) {
-      console.error("Embedding error:", error);
-      setEmbeddingStatus("Error updating embeddings");
-    } finally {
-      setIsEmbedding(false);
-    }
-  };
-
-  runInitialEmbedding();
-}, []);
-
-// Query search results
-useEffect(() => {
-  if (!query) {
-    setSearchResults([]);
-    return;
-  }
-
-  const fetchSearchResults = async () => {
-    setLoading(true);
-    try {
-      const vectorRes = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-
-      if (vectorRes.ok) {
-        const vectorResults = await vectorRes.json();
-
-        // fallback or augmentation logic (e.g., add fuzzy matches)
+      try {
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         );
 
-        const { data: supaResults, error } = await supabase
+        const { count: capstoneCount } = await supabase
           .from("capstones")
-          .select("id, slug, title, abstract, keywords, specialization, course, authors, created_at")
-          .ilike("title", `%${query}%`);
+          .select("*", { count: "exact", head: true });
 
-        console.log("Query value:", query);
-
-        // Get full details for vectorResults
-        const vectorIds = vectorResults.map((v: any) => v.id);
-        const { data: fullVectorResults, error: vectorError } = await supabase
+        const { count: embedCount } = await supabase
           .from("capstones")
-          .select("id, slug, title, abstract, keywords, specialization, course, authors, created_at")
-          .in("id", vectorIds);
+          .select("*", { count: "exact", head: true });
 
-        if (vectorError) console.error("Error fetching full vector data:", vectorError);
+        if (capstoneCount === 0) {
+          setEmbeddingStatus("No capstones found to embed");
+          return;
+        }
 
-        // Merge results: full vector results first, then extra supabase matches
-        const combinedResults = [
-          ...(fullVectorResults || []),
-          ...(supaResults || []).filter(
-            (s) => !vectorIds.includes(s.id)
-          ),
-        ];
-
-
-        setSearchResults(combinedResults);
-        if (error) console.error(error);
-      } else {
-        const errorData = await vectorRes.json();
-        console.error(errorData.error);
+        if (embedCount === 0 || embedCount < capstoneCount) {
+          setEmbeddingStatus(
+            `Updating embeddings (${embedCount || 0}/${capstoneCount})...`,
+          );
+          const response = await fetch("/api/embed", { method: "POST" });
+          const data = await response.json();
+          setEmbeddingStatus(
+            `Embeddings updated: ${data.count} items processed`,
+          );
+        } else {
+          setEmbeddingStatus("Embeddings up to date");
+        }
+      } catch (error) {
+        console.error("Embedding error:", error);
+        setEmbeddingStatus("Error updating embeddings");
+      } finally {
+        setIsEmbedding(false);
       }
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-      setLoading(false);
+    };
+
+    runInitialEmbedding();
+  }, []);
+
+  // Query search results
+  useEffect(() => {
+    if (!query) {
+      setSearchResults([]);
+      return;
     }
-  };
 
-  const debounceTimer = setTimeout(() => {
-    fetchSearchResults();
-  }, 300);
+    const fetchSearchResults = async () => {
+      setLoading(true);
+      try {
+        const vectorRes = await fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
 
-  return () => clearTimeout(debounceTimer);
-}, [query]);
+        if (vectorRes.ok) {
+          const vectorResults = await vectorRes.json();
+
+          // fallback or augmentation logic (e.g., add fuzzy matches)
+          const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          );
+
+          const { data: supaResults, error } = await supabase
+            .from("capstones")
+            .select(
+              "id, slug, title, abstract, keywords, specialization, course, authors, created_at",
+            )
+            .ilike("title", `%${query}%`);
+
+          console.log("Query value:", query);
+
+          // Get full details for vectorResults
+          const vectorIds = vectorResults.map((v: any) => v.id);
+          const { data: fullVectorResults, error: vectorError } = await supabase
+            .from("capstones")
+            .select(
+              "id, slug, title, abstract, keywords, specialization, course, authors, created_at",
+            )
+            .in("id", vectorIds);
+
+          if (vectorError) {
+            console.error("Error fetching full vector data:", vectorError);
+          }
+
+          // Merge results: full vector results first, then extra supabase matches
+          const combinedResults = [
+            ...(fullVectorResults || []),
+            ...(supaResults || []).filter(
+              (s) => !vectorIds.includes(s.id),
+            ),
+          ];
+
+          setSearchResults(combinedResults);
+          if (error) console.error(error);
+        } else {
+          const errorData = await vectorRes.json();
+          console.error(errorData.error);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      fetchSearchResults();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
 
   return (
     <>
@@ -197,62 +207,62 @@ useEffect(() => {
       </div>
 
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
-  {loading
-    ? Array.from({ length: 6 }).map((_, i) => (
-        <li key={i}>
-          <SearchCardSkeleton />
-        </li>
-      ))
-    : searchResults.map((doc) => {
-        console.log("Abstract:", doc);  // Log the abstract of each document
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+            <li key={i}>
+              <SearchCardSkeleton />
+            </li>
+          ))
+          : searchResults.map((doc) => {
+            console.log("Abstract:", doc); // Log the abstract of each document
 
-        return (
-          <li
-            key={doc.id}
-            onClick={() => setSelectedCapstone(doc)}
-            className="cursor-pointer"
+            return (
+              <li
+                key={doc.id}
+                onClick={() => setSelectedCapstone(doc)}
+                className="cursor-pointer"
+              >
+                <SearchCard
+                  id={doc.id}
+                  title={doc.title}
+                  specialization={doc.keywords?.[1] || "General"}
+                  course={doc.keywords?.[0] || "IT"}
+                  date={new Date(doc.created_at).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                />
+              </li>
+            );
+          })}
+      </ul>
+
+      {selectedCapstone && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setSelectedCapstone(null)}
           >
-            <SearchCard
-              id={doc.id}
-              title={doc.title}
-              specialization={doc.keywords?.[1] || "General"}
-              course={doc.keywords?.[0] || "IT"}
-              date={new Date(doc.created_at).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+          </div>
+
+          <div
+            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CapstoneSidebar
+              capstone={selectedCapstone}
+              onClose={() => setSelectedCapstone(null)}
             />
-          </li>
-        );
-      })}
-</ul>
+          </div>
+        </>
+      )}
 
-{selectedCapstone && (
-  <>
-    <div
-      className="fixed inset-0 bg-black/50 z-40"
-      onClick={() => setSelectedCapstone(null)}
-    ></div>
-
-    <div
-      className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <CapstoneSidebar
-        capstone={selectedCapstone}
-        onClose={() => setSelectedCapstone(null)}
-      />
-    </div>
-  </>
-)}
-
-{searchResults.length > 0 && (
-  <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
-    Show More
-  </button>
-)}
-
+      {searchResults.length > 0 && (
+        <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
+          Show More
+        </button>
+      )}
     </>
   );
 };

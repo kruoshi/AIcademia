@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import { Globe, Library, Stamp, BookCopy } from "lucide-react";
+import { BookCopy, Globe, Library, Stamp } from "lucide-react";
 
 type NavItem = {
   title: string;
@@ -25,14 +25,6 @@ const NavItems: NavItem[] = [
     path: "/collections",
     icon: (
       <Library strokeWidth={2.5} className="size-5 lg:size-5.5 3xl:size-6" />
-    ),
-  },
-
-  {
-    title: "For Approvals",
-    path: "/for-approvals",
-    icon: (
-      <Stamp strokeWidth={2.5} className="size-5  lg:size-5.5 3xl:size-6" />
     ),
   },
 ];
