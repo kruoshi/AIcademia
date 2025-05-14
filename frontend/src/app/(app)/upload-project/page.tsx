@@ -20,7 +20,6 @@ type ParsedData = {
   title: string;
   abstract: string;
   keywords: string[];
-  introduction: string;
 };
 export default function UploadProjectPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -171,8 +170,9 @@ export default function UploadProjectPage() {
           pdf_url: pdfUrl,
           keywords,
           status: "draft",
-          specialization: null,
-          course: null,
+          specialization: specialization,
+          course: course,
+          published_at: `${publishedDate}-01`,
           extracted_text: null,
         }),
       });
@@ -197,7 +197,6 @@ export default function UploadProjectPage() {
         title,
         abstract: result.abstract,
         keywords,
-        introduction: "",
       });
 
       setShowKeywordProcessor(true);
@@ -401,6 +400,11 @@ export default function UploadProjectPage() {
               </button>
             </div>
           </div>
+          {processingComplete && (
+            <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg">
+              Keyword processing completed successfully!
+            </div>
+          )}
 
           {showKeywordProcessor && (
             <div className="mt-6 p-4 border border-gray-200 rounded-lg">
@@ -410,50 +414,32 @@ export default function UploadProjectPage() {
                   (Processing will start automatically)
                 </span>
               </h2>
-              <KeywordProcessor
-                onComplete={onProcessingComplete}
-                autoProcess={true}
-              />
-            </div>
-          )}
+              {parsedData
+                ? (
+                  <div>
+                    <h2 className="text-xl font-bold">Document Title</h2>
+                    <p className="mt-2 text-gray-800">{parsedData.title}</p>
 
-          {processingComplete && (
-            <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg">
-              Keyword processing completed successfully!
+                    <h3 className="mt-6 font-semibold">Abstract</h3>
+                    <p className="mt-2 text-gray-700 text-sm">
+                      {parsedData.abstract}
+                    </p>
+
+                    <h3 className="mt-6 font-semibold">Keywords</h3>
+                    <p className="mt-2 text-gray-700 text-sm">
+                      {parsedData.keywords.join(", ")}
+                    </p>
+                  </div>
+                )
+                : (
+                  <p className="text-center text-gray-500">
+                    Parsed text will appear here.
+                  </p>
+                )}
             </div>
           )}
         </div>
       </div>
-
-      <aside className="w-full mt-10 md:mt-0 md:w-1/3 bg-gray-50 p-8 overflow-auto">
-        {parsedData
-          ? (
-            <div>
-              <h2 className="text-xl font-bold">Document Title</h2>
-              <p className="mt-2 text-gray-800">{parsedData.title}</p>
-
-              <h3 className="mt-6 font-semibold">Abstract</h3>
-              <p className="mt-2 text-gray-700 text-sm">
-                {parsedData.abstract}
-              </p>
-
-              <h3 className="mt-6 font-semibold">Keywords</h3>
-              <p className="mt-2 text-gray-700 text-sm">
-                {parsedData.keywords.join(", ")}
-              </p>
-
-              <h3 className="mt-6 font-semibold">Introduction</h3>
-              <p className="mt-2 text-gray-700 text-sm">
-                {parsedData.introduction}
-              </p>
-            </div>
-          )
-          : (
-            <p className="text-center text-gray-500">
-              Parsed text will appear here.
-            </p>
-          )}
-      </aside>
     </>
   );
 }
