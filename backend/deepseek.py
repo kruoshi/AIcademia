@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path='../frontend/.env.local')
 
 client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key=os.environ.get("NEXT_PUBLIC_API_KEY"),
     base_url="https://api.deepseek.com"
 )
 
