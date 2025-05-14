@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { data: projects, error } = await supabase
       .from('capstones')
-      .select('id, title, keywords');
+      .select('id, title, keywords, profile_id');
 
     if (error) throw error;
     if (!projects || projects.length === 0) {
@@ -20,12 +20,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const embedding = await encodeText(compositeText);
 
       const { error: upsertError } = await supabase
-        .from('capstone_embed')
+        .from('capstones')
         .upsert({
           id: project.id,
           title: project.title,
           keywords: project.keywords,
           embedding,
+          profile_id: project.profile_id
         });
 
       if (upsertError) {

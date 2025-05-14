@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.capstone_embed (
     keywords text[],
     embedding vector(384),
     fts tsvector,
-    created_at timestamptz
+    created_at timestamptz NOT NULL DEFAULT now()  -- Added NOT NULL and default
 );
 
 -- Drop existing functions in correct order to avoid dependency issues
@@ -27,6 +27,7 @@ CREATE OR REPLACE FUNCTION vector_capstone_search(embed vector)
 RETURNS TABLE (
     id uuid,
     title text,
+    created_at timestamptz,
     keywords text[],
     similarity_score float
 ) AS $$
@@ -35,6 +36,7 @@ BEGIN
     SELECT 
         c.id,
         c.title,
+        c.created_at,
         c.keywords,
         (1 - (c.embedding <-> embed)) AS similarity_score
     FROM capstone_embed c
@@ -109,17 +111,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create a function to sync data from capstones to capstone_embed
+-- Update the sync function to properly handle created_at
 CREATE OR REPLACE FUNCTION sync_capstone_to_embed()
 RETURNS TRIGGER AS $$ 
 BEGIN
     INSERT INTO capstone_embed (id, title, keywords, created_at)
-    VALUES (NEW.id, NEW.title, NEW.keywords, NEW.created_at)
+    VALUES (
+        NEW.id, 
+        NEW.title, 
+        NEW.keywords, 
+        COALESCE(NEW.created_at, now())  -- Use the capstone's created_at or current time if null
+    )
     ON CONFLICT (id) DO UPDATE
     SET 
         title = EXCLUDED.title,
         keywords = EXCLUDED.keywords,
-        created_at = EXCLUDED.created_at;
+        created_at = COALESCE(EXCLUDED.created_at, capstone_embed.created_at);  -- Preserve existing if new is null
+    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -130,3 +138,9 @@ DROP TRIGGER IF EXISTS sync_capstone_trigger ON capstones;
 CREATE TRIGGER sync_capstone_trigger
 AFTER INSERT OR UPDATE ON capstones
 FOR EACH ROW EXECUTE FUNCTION sync_capstone_to_embed();
+
+-- Optional: Backfill any existing capstone_embed records with null created_at
+UPDATE capstone_embed ce
+SET created_at = COALESCE(ce.created_at, c.created_at, now())
+FROM capstones c
+WHERE ce.id = c.id AND ce.created_at IS NULL;

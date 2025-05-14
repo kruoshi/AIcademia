@@ -56,7 +56,7 @@ useEffect(() => {
         .select('*', { count: 'exact', head: true });
 
       const { count: embedCount } = await supabase
-        .from('capstone_embed')
+        .from('capstones')
         .select('*', { count: 'exact', head: true });
 
       if (capstoneCount === 0) {
