@@ -14,6 +14,7 @@ import EnvDebug from "@/components/env-debug";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useSession } from "next-auth/react";
 import { DEGREE_STRUCTURE } from "@/lib/constants/DegreeStructure";
+import { Dialog } from "@headlessui/react";
 
 const supabase = createClientComponentClient();
 type ParsedData = {
@@ -33,6 +34,8 @@ export default function UploadProjectPage() {
   const [specialization, setSpecialization] = useState<string>("");
   const [publishedDate, setPublishedDate] = useState<string>("");
   const isFormValid = course && specialization && publishedDate;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const email = session?.user?.email;
@@ -66,7 +69,9 @@ export default function UploadProjectPage() {
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
-
+    setLoading(true);
+    setModalMessage("Uploading and processing file...");
+    setIsModalOpen(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -189,7 +194,7 @@ export default function UploadProjectPage() {
 
       if (insertError) {
         console.error(insertError);
-        alert("Failed to save capstone.");
+        setModalMessage("❌ Failed to save capstone.");
         return;
       }
 
@@ -200,10 +205,10 @@ export default function UploadProjectPage() {
       });
 
       setShowKeywordProcessor(true);
-      alert(`✅ ${fullName}'s capstone saved successfully!`);
+      setModalMessage(`Capstone saved successfully!`);
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Something went wrong.");
+      setModalMessage("Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -396,7 +401,32 @@ export default function UploadProjectPage() {
                 disabled={!file || loading || !isFormValid}
                 className="mt-4 w-full bg-yellow-500 text-black font-bold py-3 rounded disabled:opacity-50"
               >
-                {loading ? "Processing..." : "UPLOAD"}
+                {loading
+                  ? (
+                    <span className="flex items-center gap-2 justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 text-black"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                      Processing...
+                    </span>
+                  )
+                  : "UPLOAD"}
               </button>
             </div>
           </div>
@@ -440,6 +470,28 @@ export default function UploadProjectPage() {
           )}
         </div>
       </div>
+      <Dialog
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        className="fixed z-50 inset-0 overflow-y-auto"
+      >
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <Dialog.Panel className="bg-white rounded-lg max-w-sm w-full p-6 shadow-xl text-center">
+            <Dialog.Title className="text-lg font-bold mb-2">
+              Upload Status
+            </Dialog.Title>
+            <Dialog.Description className="text-gray-700">
+              {modalMessage}
+            </Dialog.Description>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="mt-4 bg-secondary text-white font-bold py-2 px-4 rounded"
+            >
+              Close
+            </button>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </>
   );
 }
