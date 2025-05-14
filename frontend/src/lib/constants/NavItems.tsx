@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import { Globe, Library, BookCopy } from "lucide-react";
+import { BookCopy, Globe, Library, Stamp } from "lucide-react";
 
 type NavItem = {
   title: string;
