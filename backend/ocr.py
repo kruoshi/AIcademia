@@ -22,9 +22,25 @@ def extract_title_authors_abstract_with_fitz(pdf_bytes):
             return "Error: Empty PDF", "", "", ""
 
         page = doc[0]
-        text = page.get_text("text")
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        blocks = page.get_text("dict")["blocks"]
 
+        # Find largest font-size block near the top of the page
+        candidates = []
+        for block in blocks:
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    text = span["text"].strip()
+                    if not text or "college of information" in text.lower():
+                        continue
+                    candidates.append((span["size"], span["bbox"][1], text))  # (size, y, text)
+
+        # Sort by font size (descending), then by y position (ascending)
+        candidates.sort(key=lambda x: (-x[0], x[1]))
+
+        title_text = candidates[0][2] if candidates else ""
+
+        # Extract authors
+        lines = [line.strip() for line in page.get_text("text").split('\n') if line.strip()]
         author_lines = []
         email_indices = []
         for i, line in enumerate(lines):
@@ -33,18 +49,9 @@ def extract_title_authors_abstract_with_fitz(pdf_bytes):
                 if i > 0 and not re.search(r'@[\w.]+', lines[i - 1]):
                     author_lines.append(lines[i - 1])
                 author_lines.append(line)
-
-        raw_title_lines = lines[:email_indices[0]] if email_indices else lines[:1]
-
-        def is_probable_name(line):
-            words = line.split()
-            cap_count = sum(1 for word in words if word.istitle())
-            return line.isupper() or (cap_count >= 2 and len(words) <= 5)
-
-        title_lines = [line for line in raw_title_lines if not is_probable_name(line)]
-        title = " ".join(title_lines).strip()
         author_block = "\n".join(author_lines)
 
+        # Abstract: start after email, stop at Keywords or 1./Introduction
         abstract_lines = []
         i = email_indices[-1] + 1 if email_indices else 1
         while i < len(lines):
@@ -53,9 +60,9 @@ def extract_title_authors_abstract_with_fitz(pdf_bytes):
                 break
             abstract_lines.append(line)
             i += 1
-
         abstract = " ".join(abstract_lines).strip()
-        return "", title, author_block.strip(), abstract
+
+        return "", title_text.strip(), author_block.strip(), abstract
 
     except Exception as e:
         return f"Error processing PDF with fitz: {e}", "", "", ""
@@ -97,6 +104,22 @@ def parse_author_block_to_json(author_block):
 
     return authors
 
+def extract_title_with_fitz(pdf_path):
+    import fitz
+    doc = fitz.open(pdf_path)
+    page = doc[0]
+    blocks = page.get_text("dict")["blocks"]
+
+    biggest_font_size = 0
+    title_text = ""
+
+    for block in blocks:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                if span["size"] > biggest_font_size:
+                    biggest_font_size = span["size"]
+                    title_text = span["text"]
+    return title_text.strip()
 
 @app.route('/')
 def index():
