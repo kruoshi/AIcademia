@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import SearchCardSkeleton from "@/components/ui/SkeletonSearchCard";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
+import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 
 type CapstoneResult = {
   id: string;
