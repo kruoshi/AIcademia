@@ -22,7 +22,7 @@ const NavItems: NavItem[] = [
   },
   {
     title: "Library",
-    path: "/collections",
+    path: "/library",
     icon: (
       <Library strokeWidth={2.5} className="size-5 lg:size-5.5 3xl:size-6" />
     ),

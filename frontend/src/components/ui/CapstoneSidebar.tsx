@@ -108,7 +108,7 @@ const CapstoneSidebar: React.FC<CapstoneSidebarProps> = (
                 </p>
 
                 <button
-                    onClick={() => router.push(`/search/${capstone.id}`)}
+                    onClick={() => router.push(`/search-engine/${capstone.id}`)}
                     className="mt-6 w-full bg-secondary text-gray py-2 rounded-md font-semibold hover:opacity-90 transition text-sm"
                 >
                     More Details

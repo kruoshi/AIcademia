@@ -197,15 +197,6 @@ const SearchEngine: React.FC = () => {
         )}
       </div>
 
-      <div className="font-roboto flex flex-wrap items-center mx-auto sm:w-5/6 justify-center gap-2 mt-3 sm:mt-5 font-medium text-[10px] xs:text-[11px] sm:text-xs md:text-sm ">
-        <Keywords />
-        <Keywords />
-        <Keywords />
-        <Keywords />
-        <Keywords />
-        <Keywords />
-      </div>
-
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => (
