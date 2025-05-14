@@ -9,9 +9,11 @@ export type CourseCardProps = {
   }[];
 };
 
-const CourseCard: React.FC<CourseCardProps> = (
-  { course, total, specializations },
-) => {
+const CourseCard: React.FC<CourseCardProps> = ({
+  course,
+  total,
+  specializations,
+}) => {
   return (
     <div className="border-s-6 border-secondary w-full xs:w-80 md:w-90 xl:w-100 snap-x shrink-0 rounded-sm shadow-sm py-2 px-4 sm:px-6 bg-white ">
       <header className="flex items-center justify-between">
@@ -31,7 +33,7 @@ const CourseCard: React.FC<CourseCardProps> = (
         </div>
       </header>
 
-      <div className="flex flex-nowrap gap-0.5 overflow-x-auto items-center font-extrabold text-xs md:text-sm xl:text-base bg-text-light/10 w-full p-4 rounded-lg my-2 md:my-3 no-scrollbar">
+      <div className="flex flex-nowrap overflow-x-auto items-center font-extrabold text-xs md:text-sm xl:text-base bg-text-light/10 w-full p-4 rounded-lg my-2 md:my-3 no-scrollbar">
         {specializations.map((s) => (
           <div className="text-center w-1/2 shrink-0" key={s.name}>
             <span className="text-text-dark">{s.count}</span>

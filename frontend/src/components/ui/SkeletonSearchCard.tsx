@@ -1,29 +1,31 @@
-import React from 'react';
-
-const SearchCardSkeleton: React.FC = () => {
+const SearchCardSkeleton = () => {
   return (
-    <div className="animate-pulse break-inside-avoid border border-grey bg-white rounded-xl shadow-md/15 p-4 h-auto mb-4">
-      {/* Top section with course/specialization and bookmark */}
-      <div className="flex justify-between items-end">
+    <div className="break-inside-avoid border border-grey bg-white rounded-xl shadow-md/15 p-4 h-auto mb-4 animate-pulse">
+      <div className="flex justify-between items-center mt-2">
         <div className="flex items-center gap-1.5">
-          {/* Course skeleton */}
-          <span className="flex gap-1.5 items-center bg-gray-200 px-2.5 py-0.5 rounded-full w-20 h-6"></span>
-          
-          {/* Specialization skeleton */}
-          <span className="flex gap-1.5 items-center bg-gray-200 px-2.5 py-0.5 rounded-full w-20 h-6"></span>
+          <span className="flex gap-1.5 items-center bg-gray-200 px-2.5 py-0.5 rounded-full">
+            <div className="w-4 h-4 bg-gray-300 rounded-full" />
+            <div className="w-6 h-3 bg-gray-300 rounded" />
+          </span>
+          <span className="flex gap-1.5 items-center bg-gray-200 px-2.5 py-0.5 rounded-full">
+            <div className="w-4 h-4 bg-gray-300 rounded-full" />
+            <div className="w-12 h-3 bg-gray-300 rounded" />
+          </span>
         </div>
-        {/* Bookmark skeleton */}
-        <div className="border p-1.5 sm:p-2 rounded-full bg-gray-200 w-6 h-6"></div>
+        <div className="flex gap-2">
+          <div className="w-4 h-4 bg-gray-300 rounded-full" />
+          <div className="w-4 h-4 bg-gray-300 rounded-full" />
+          <div className="w-4 h-4 bg-gray-300 rounded-full" />
+        </div>
       </div>
 
-      {/* Title skeleton */}
-      <div className="my-4 md:my-5 bg-gray-200 rounded h-4 w-full"></div>
-      <div className="my-4 md:my-5 bg-gray-200 rounded h-4 w-3/4"></div>
+      <div className="my-4 md:my-5">
+        <div className="w-3/4 h-4 bg-gray-300 rounded" />
+      </div>
 
-      {/* Date section skeleton */}
       <div className="relative mb-2">
-        <span className="absolute w-4 h-0.5 bg-gray-200 top-1/2"></span>
-        <div className="ml-6 bg-gray-200 rounded h-3 w-16"></div>
+        <span className="absolute w-4 h-0.5 bg-gray-300 top-1/2"></span>
+        <div className="ml-6 w-1/4 h-3 bg-gray-300 rounded" />
       </div>
     </div>
   );

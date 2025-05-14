@@ -2,12 +2,10 @@
 
 import { Search } from "lucide-react";
 import SearchCard from "@/components/ui/SearchCard";
-import Keywords from "@/components/ui/Keywords";
 import { useEffect, useState } from "react";
 import SearchCardSkeleton from "@/components/ui/SkeletonSearchCard";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
-import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 
 type CapstoneResult = {
   id: string;
