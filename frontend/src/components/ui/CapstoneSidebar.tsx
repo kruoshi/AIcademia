@@ -13,15 +13,16 @@ type CapstoneSidebarProps = {
         abstract: string;
         authors: string;
         course: string;
-        published_at: string;
+        published_at?: string;
         created_at: string;
     };
     onClose: () => void;
 };
 
-const CapstoneSidebar: React.FC<CapstoneSidebarProps> = (
-    { capstone, onClose },
-) => {
+const CapstoneSidebar: React.FC<CapstoneSidebarProps> = ({ capstone, onClose }) => {
+    console.log("Capstone prop inside Sidebar:", capstone);  // Log the whole capstone object
+    console.log("Capstone Abstract:", capstone.abstract);    // Log the abstract specifically
+
     return (
         <motion.div
             initial={{ x: "100%" }}
@@ -44,7 +45,21 @@ const CapstoneSidebar: React.FC<CapstoneSidebarProps> = (
                     {capstone.title}
                 </h2>
                 <h4 className="text-xs font-medium mb-1 leading-snug">
-                    {capstone.authors}
+                    {capstone.authors && Array.isArray(capstone.authors) && capstone.authors.length > 0 ? (
+                        <div className="space-y-1">
+                            <h3 className="font-semibold">Authors</h3>
+                            <ul className="list-disc list-inside text-sm">
+                            {capstone.authors.map((author: any, index: number) => (
+                                <li key={index}>
+                                {author.name} — {author.email}
+                                </li>
+                            ))}
+                            </ul>
+                        </div>
+                        ) : (
+                        <p className="text-sm italic text-gray-500">No authors listed.</p>
+                        )}
+
                 </h4>
 
                 <div className="space-y-2 mt-3 text-gray-700 text-sm">

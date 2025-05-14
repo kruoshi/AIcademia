@@ -19,7 +19,7 @@ type CapstoneResult = {
   abstract: string;
   course: string;
   authors: string;
-  published_at: string;
+  published_at?: string;
   created_at: string;
 };
 
@@ -58,6 +58,7 @@ useEffect(() => {
       const { count: embedCount } = await supabase
         .from('capstones')
         .select('*', { count: 'exact', head: true });
+
 
       if (capstoneCount === 0) {
         setEmbeddingStatus("No capstones found to embed");
@@ -113,12 +114,25 @@ useEffect(() => {
           .select("id, slug, title, abstract, keywords, specialization, course, authors, created_at")
           .ilike("title", `%${query}%`);
 
+        console.log("Query value:", query);
+
+        // Get full details for vectorResults
+        const vectorIds = vectorResults.map((v: any) => v.id);
+        const { data: fullVectorResults, error: vectorError } = await supabase
+          .from("capstones")
+          .select("id, slug, title, abstract, keywords, specialization, course, authors, created_at")
+          .in("id", vectorIds);
+
+        if (vectorError) console.error("Error fetching full vector data:", vectorError);
+
+        // Merge results: full vector results first, then extra supabase matches
         const combinedResults = [
-          ...vectorResults,
+          ...(fullVectorResults || []),
           ...(supaResults || []).filter(
-            (s) => !vectorResults.find((v: any) => v.id === s.id)
+            (s) => !vectorIds.includes(s.id)
           ),
         ];
+
 
         setSearchResults(combinedResults);
         if (error) console.error(error);
@@ -183,31 +197,35 @@ useEffect(() => {
       </div>
 
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
-{loading
-  ? Array.from({ length: 6 }).map((_, i) => (
-      <li key={i}>
-        <SearchCardSkeleton />
-      </li>
-    ))
-  : searchResults.map((doc) => (
-      <li
-        key={doc.id}
-        onClick={() => setSelectedCapstone(doc)}
-        className="cursor-pointer"
-      >
-        <SearchCard
-          id={doc.id}
-          title={doc.title}
-          specialization={doc.keywords?.[1] || "General"}
-          course={doc.keywords?.[0] || "IT"}
-          date={new Date(doc.created_at).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
-        />
-      </li>
-    ))}
+  {loading
+    ? Array.from({ length: 6 }).map((_, i) => (
+        <li key={i}>
+          <SearchCardSkeleton />
+        </li>
+      ))
+    : searchResults.map((doc) => {
+        console.log("Abstract:", doc);  // Log the abstract of each document
+
+        return (
+          <li
+            key={doc.id}
+            onClick={() => setSelectedCapstone(doc)}
+            className="cursor-pointer"
+          >
+            <SearchCard
+              id={doc.id}
+              title={doc.title}
+              specialization={doc.keywords?.[1] || "General"}
+              course={doc.keywords?.[0] || "IT"}
+              date={new Date(doc.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            />
+          </li>
+        );
+      })}
 </ul>
 
 {selectedCapstone && (
