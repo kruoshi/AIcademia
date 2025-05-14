@@ -5,7 +5,6 @@ import { ArrowUpRight, Search } from "lucide-react";
 import CourseCard from "@/components/ui/CourseCard";
 import CitedCard from "@/components/ui/CitedCard";
 import LatestCard from "@/components/ui/LatestCard";
-import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 import Link from "next/link";
 import { DEGREE_STRUCTURE } from "@/lib/constants/DegreeStructure";
 
@@ -21,7 +20,7 @@ type CourseStats = {
 const fetchCourseStats = async (): Promise<CourseStats[]> => {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   const { data, error } = await supabase
@@ -37,9 +36,7 @@ const fetchCourseStats = async (): Promise<CourseStats[]> => {
     ([course, specs]) => {
       const specializationCounts = specs.map((spec) => {
         const count = data.filter(
-          (row) =>
-            row.course === course &&
-            row.specialization === spec,
+          (row) => row.course === course && row.specialization === spec
         ).length;
 
         return {
@@ -55,7 +52,7 @@ const fetchCourseStats = async (): Promise<CourseStats[]> => {
         total,
         specializations: specializationCounts,
       };
-    },
+    }
   );
 
   return result;
@@ -75,21 +72,17 @@ type CapstoneRecord = {
 
 const AcademicDatabase = () => {
   const [docs, setDocs] = useState<CapstoneRecord[]>([]);
-  const [selectedCapstone, setSelectedCapstone] = useState<
-    CapstoneRecord | null
-  >(null);
-
   useEffect(() => {
     const fetchDocs = async () => {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const { data, error } = await supabase
         .from("capstones")
         .select(
-          "id, slug, title, keywords, specialization, abstract, course, authors, created_at",
+          "id, slug, title, keywords, specialization, abstract, course, authors, created_at"
         )
         .order("created_at", { ascending: false });
 
@@ -142,7 +135,7 @@ const AcademicDatabase = () => {
         <p className="font-bold text-text font-roboto my-4 text-base sm:text-lg xl:text-xl 3xl:text-2xl">
           Courses
         </p>
-        <div className="mt-2 w-full overflow-x-auto mb-2 flex flex-nowrap gap-3 md:gap-10 p-0.5 font-roboto">
+        <div className="mt-2 overflow-x-auto mb-2 flex flex-nowrap gap-3 md:gap-10 font-roboto no-scrollbar">
           {courseStats.map((stat) => (
             <CourseCard
               key={stat.course}
@@ -154,60 +147,42 @@ const AcademicDatabase = () => {
         </div>
       </div>
 
-      <div className="mt-8">
-        <p className="font-bold text-text font-roboto mb-4 text-base sm:text-lg xl:text-xl 2xl:text-2xl">
-          Latest Publications
-        </p>
-        <ul className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-1 font-roboto">
-          {docs.map((doc) => (
-            <li key={doc.id} className="h-50 sm:h-60 3xl:h-70">
-              <LatestCard
-                id={doc.id}
-                title={doc.title}
-                specialization={doc.specialization}
-                course={doc.course}
-                date={new Date(doc.created_at).toLocaleDateString()}
-                onClick={() => setSelectedCapstone(doc)}
-              />
-            </li>
-          ))}
-        </ul>
+      <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row gap-8 mt-8 w-full">
+        <div className="w-full md:w-3/5 lg:w-full xl:w-3/5 2xl:w-3/4">
+          <p className="font-bold text-text font-roboto mb-4 text-base sm:text-lg xl:text-xl">
+            Latest Publications
+          </p>
+          <ul className="mt-2 grid grid-cols-1  xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3 font-roboto">
+            {docs.slice(1).map((doc) => (
+              <Link
+                href={`/${doc.id}`}
+                key={doc.id}
+                className="h-40 xs:h-45 sm:h-50 md:h-60"
+              >
+                <LatestCard
+                  id={doc.id}
+                  title={doc.title}
+                  specialization={doc.specialization}
+                  course={doc.course}
+                  date={new Date(doc.created_at).toLocaleDateString()}
+                />
+              </Link>
+            ))}
+          </ul>
+        </div>
+        <div className="w-full  md:w-2/5 lg:w-full xl:w-2/5 2xl:w-1/4mt-10">
+          <p className="font-bold text-text font-roboto mb-4 text-base sm:text-lg xl:text-xl">
+            Top-Cited
+          </p>
+          <ul className="mt-2 grid grid-cols-1 gap-4 font-roboto px-3 py-5 bg-white rounded-md shadow-md/5">
+            {docs.slice(1, 6).map((doc, index) => (
+              <Link href={`/${doc.id}`} key={doc.id}>
+                <CitedCard id={doc.id} title={doc.title} index={index + 1} />
+              </Link>
+            ))}
+          </ul>
+        </div>
       </div>
-
-      <div className="mt-10">
-        <p className="font-bold text-text font-roboto mb-4 text-base sm:text-lg xl:text-xl 2xl:text-2xl">
-          Top-Cited
-        </p>
-        <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1 font-roboto">
-          {docs.slice(0, 4).map((doc, index) => (
-            <li key={doc.id}>
-              <CitedCard
-                id={doc.id}
-                title={doc.title}
-                index={index + 1}
-                onClick={() => setSelectedCapstone(doc)}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
-      {selectedCapstone && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSelectedCapstone(null)}
-          />
-          <div
-            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CapstoneSidebar
-              capstone={selectedCapstone}
-              onClose={() => setSelectedCapstone(null)}
-            />
-          </div>
-        </>
-      )}
     </>
   );
 };

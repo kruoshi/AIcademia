@@ -40,3 +40,7 @@ a {
     color-scheme: dark;
   }
 }
+
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
