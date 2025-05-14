@@ -1,20 +1,23 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { encodeText } from '@/lib/embedder';
-import { supabase } from '@/lib/supabase';
+import type { NextApiRequest, NextApiResponse } from "next";
+import { encodeText } from "@/lib/embedder";
+import { supabase } from "@/lib/supabase";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const threshold = -0.5; // More lenient than search
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const threshold = -0.2; // More lenient than search
   const { title, keywords, capstoneId } = req.body;
 
   if (!title || !keywords) {
-    return res.status(400).json({ error: 'Missing title or keywords' });
+    return res.status(400).json({ error: "Missing title or keywords" });
   }
 
   const combined = `${title} ${keywords}`;
   const embedding = await encodeText(combined);
 
-  const { data, error } = await supabase.rpc('vector_capstone_search', {
-    embed: embedding
+  const { data, error } = await supabase.rpc("vector_capstone_search", {
+    embed: embedding,
   });
 
   if (error) {

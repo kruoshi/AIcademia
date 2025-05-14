@@ -11,6 +11,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Link from "next/link";
 
 const supabase = createClientComponentClient();
 
@@ -18,6 +19,34 @@ export default function CapstonePage() {
   const params = useParams() as { id: string };
   const id = params.id;
   const [capstone, setCapstone] = useState<any>(null);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState(false);
+
+  const fetchRecommendations = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/recommend-capstones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: capstone.title,
+          keywords: capstone.keywords,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch recommendations");
+      }
+
+      const data = await res.json();
+      setRecommendations(data);
+    } catch (error) {
+      console.error("error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCapstone = async () => {
@@ -86,7 +115,10 @@ export default function CapstonePage() {
       </ul>
 
       <div className="flex gap-4 mb-6">
-        <button className="bg-yellow-400 px-4 py-2 font-semibold rounded">
+        <button
+          className="bg-yellow-400 px-4 py-2 font-semibold rounded"
+          onClick={fetchRecommendations}
+        >
           See Recommendations
         </button>
         <a
@@ -103,10 +135,16 @@ export default function CapstonePage() {
         <h2 className="text-xl font-bold mb-2">Abstract</h2>
         <p>{capstone.abstract}</p>
 
-        {capstone.recommendations && (
+        {recommendations.length > 0 && (
           <div className="mt-6">
             <h3 className="text-lg font-bold mb-2">Recommendations</h3>
-            <p>{capstone.recommendations}</p>
+            {recommendations.slice(1).map((item) => (
+              <Link href={`/search-engine/${item.id}`} key={item.id}>
+                <p className="bg-white py-2 px-8 shadow-sm/10 w-full mb-2">
+                  {item.title}
+                </p>
+              </Link>
+            ))}
           </div>
         )}
       </div>
