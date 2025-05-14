@@ -3,6 +3,7 @@
 import { Book, Calendar, GraduationCap, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type CapstoneSidebarProps = {
     capstone: {
@@ -107,12 +108,11 @@ const CapstoneSidebar: React.FC<CapstoneSidebarProps> = (
                     {capstone.abstract}
                 </p>
 
-                <button
-                    onClick={() => router.push(`/search-engine/${capstone.id}`)}
-                    className="mt-6 w-full bg-secondary text-gray py-2 rounded-md font-semibold hover:opacity-90 transition text-sm"
-                >
-                    More Details
-                </button>
+                <Link href={`/search-engine/${capstone.id}`}>
+                    <button className="mt-6 w-full bg-secondary text-gray py-2 rounded-md font-semibold hover:opacity-90 transition text-sm">
+                        More Details
+                    </button>
+                </Link>
             </div>
         </motion.div>
     );

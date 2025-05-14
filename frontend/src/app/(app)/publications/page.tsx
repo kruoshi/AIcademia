@@ -20,7 +20,7 @@ type CourseStats = {
 const fetchCourseStats = async (): Promise<CourseStats[]> => {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   const { data, error } = await supabase
@@ -36,7 +36,7 @@ const fetchCourseStats = async (): Promise<CourseStats[]> => {
     ([course, specs]) => {
       const specializationCounts = specs.map((spec) => {
         const count = data.filter(
-          (row) => row.course === course && row.specialization === spec
+          (row) => row.course === course && row.specialization === spec,
         ).length;
 
         return {
@@ -52,7 +52,7 @@ const fetchCourseStats = async (): Promise<CourseStats[]> => {
         total,
         specializations: specializationCounts,
       };
-    }
+    },
   );
 
   return result;
@@ -76,13 +76,13 @@ const AcademicDatabase = () => {
     const fetchDocs = async () => {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
 
       const { data, error } = await supabase
         .from("capstones")
         .select(
-          "id, slug, title, keywords, specialization, abstract, course, authors, created_at"
+          "id, slug, title, keywords, specialization, abstract, course, authors, created_at",
         )
         .order("created_at", { ascending: false });
 
@@ -155,7 +155,7 @@ const AcademicDatabase = () => {
           <ul className="mt-2 grid grid-cols-1  xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3 font-roboto">
             {docs.slice(1).map((doc) => (
               <Link
-                href={`/${doc.id}`}
+                href={`/publications/document/${doc.id}`}
                 key={doc.id}
                 className="h-40 xs:h-45 sm:h-50 md:h-60"
               >
