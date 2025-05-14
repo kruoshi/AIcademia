@@ -32,18 +32,17 @@ const Sidebar = () => {
       <div
         className={clsx(
           "fixed inset-0 bg-black z-30 opacity-70 lg:hidden",
-          isOpen ? "block" : "hidden",
+          isOpen ? "block" : "hidden"
         )}
         onClick={closeSidebar}
-      >
-      </div>
+      ></div>
 
       <aside
         className={clsx(
           "fixed h-full z-40 bg-accent transition-all duration-300 ease-in-out",
           isOpen
             ? "top-0 left-0 w-3/5 xs:w-1/2 sm:w-1/3 lg:w-72 3xl:w-85"
-            : "hidden",
+            : "hidden"
         )}
       >
         <nav className="flex flex-col h-full w-full justify-between px-3 py-8 lg:px-6 font-roboto">
@@ -102,11 +101,11 @@ const Sidebar = () => {
                     "flex items-center gap-4 sm:gap-6 py-3 px-3 rounded-s-full",
                     pathname.startsWith(path)
                       ? "text-black bg-secondary -mr-3 lg:-mr-6"
-                      : "text-white hover:bg-white/10",
+                      : "text-white hover:bg-white/10 -mr-3 lg:-mr-6"
                   )}
                 >
                   {icon}
-                  <span className="font-bold text-sm lg:text-base 3xl:text-lg font-roboto">
+                  <span className="font-bold text-xs sm:text-sm lg:text-base 3xl:text-lg font-roboto">
                     {title}
                   </span>
                 </Link>
@@ -116,15 +115,14 @@ const Sidebar = () => {
 
           <Link
             href="/upload-project"
-            className="text-black rounded-4xl bg-linear-to-tr mx-1 px-4 pb-6 pt-8 font-roboto from-accent to-secondary shadow-md/20 cursor-pointer"
+            className="text-black rounded-4xl bg-linear-to-tr mx-2 px-4 pb-4 pt-6 font-roboto from-secondary-dark to-secondary shadow-md/20 cursor-pointer"
           >
             <CloudUpload className="size-8 3xl:size-10" />
-            <h1 className="text-base 3xl:text-lg font-bold mt-2">
+            <h1 className="text-sm 3xl:text-lg font-bold mt-2">
               Upload Project
             </h1>
-            <p className="text-xs 3xl:text-sm font-medium">
-              Writing a chapter of your
-              <br /> academic journey
+            <p className="text-[10px] 3xl:text-sm font-semibold">
+              Writing a chapter of your academic journey
             </p>
           </Link>
         </nav>
