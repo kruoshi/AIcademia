@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Bookmark, Clock4, CircleCheckBig } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import LatestCard from "@/components/ui/LatestCard";
+import Link from "next/link";
 import clsx from "clsx";
 
 const ReadingReferences = () => {
@@ -82,7 +83,11 @@ const ReadingReferences = () => {
       </ul>
       <ul className="mt-8 grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10 font-roboto">
         {docs.slice(1).map((doc) => (
-          <li key={doc.id} className="h-40 xs:h-45 sm:h-50 md:h-60">
+          <Link
+            href={`library/${doc.id}`}
+            key={doc.id}
+            className="h-40 xs:h-45 sm:h-50 md:h-60"
+          >
             <LatestCard
               id={doc.id}
               title={doc.title}
@@ -90,7 +95,7 @@ const ReadingReferences = () => {
               course={doc.course}
               date={new Date(doc.created_at).toLocaleDateString()}
             />
-          </li>
+          </Link>
         ))}
       </ul>
     </>

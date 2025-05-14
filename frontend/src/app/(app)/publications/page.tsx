@@ -5,7 +5,6 @@ import { ArrowUpRight, Search } from "lucide-react";
 import CourseCard from "@/components/ui/CourseCard";
 import CitedCard from "@/components/ui/CitedCard";
 import LatestCard from "@/components/ui/LatestCard";
-import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 import Link from "next/link";
 import { DEGREE_STRUCTURE } from "@/lib/constants/DegreeStructure";
 
@@ -73,9 +72,6 @@ type CapstoneRecord = {
 
 const AcademicDatabase = () => {
   const [docs, setDocs] = useState<CapstoneRecord[]>([]);
-  const [selectedCapstone, setSelectedCapstone] =
-    useState<CapstoneRecord | null>(null);
-
   useEffect(() => {
     const fetchDocs = async () => {
       const supabase = createBrowserClient(
@@ -158,16 +154,19 @@ const AcademicDatabase = () => {
           </p>
           <ul className="mt-2 grid grid-cols-1  xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3 font-roboto">
             {docs.slice(1).map((doc) => (
-              <li key={doc.id} className="h-40 xs:h-45 sm:h-50 md:h-60">
+              <Link
+                href={`/${doc.id}`}
+                key={doc.id}
+                className="h-40 xs:h-45 sm:h-50 md:h-60"
+              >
                 <LatestCard
                   id={doc.id}
                   title={doc.title}
                   specialization={doc.specialization}
                   course={doc.course}
                   date={new Date(doc.created_at).toLocaleDateString()}
-                  onClick={() => setSelectedCapstone(doc)}
                 />
-              </li>
+              </Link>
             ))}
           </ul>
         </div>
@@ -177,36 +176,13 @@ const AcademicDatabase = () => {
           </p>
           <ul className="mt-2 grid grid-cols-1 gap-4 font-roboto px-3 py-5 bg-white rounded-md shadow-md/5">
             {docs.slice(1, 6).map((doc, index) => (
-              <li key={doc.id}>
-                <CitedCard
-                  id={doc.id}
-                  title={doc.title}
-                  index={index + 1}
-                  onClick={() => setSelectedCapstone(doc)}
-                />
-              </li>
+              <Link href={`/${doc.id}`} key={doc.id}>
+                <CitedCard id={doc.id} title={doc.title} index={index + 1} />
+              </Link>
             ))}
           </ul>
         </div>
       </div>
-
-      {selectedCapstone && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSelectedCapstone(null)}
-          />
-          <div
-            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CapstoneSidebar
-              capstone={selectedCapstone}
-              onClose={() => setSelectedCapstone(null)}
-            />
-          </div>
-        </>
-      )}
     </>
   );
 };

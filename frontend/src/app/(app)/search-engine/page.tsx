@@ -5,7 +5,7 @@ import SearchCard from "@/components/ui/SearchCard";
 import { useEffect, useState } from "react";
 import SearchCardSkeleton from "@/components/ui/SkeletonSearchCard";
 import { createBrowserClient } from "@supabase/ssr";
-import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
+import Link from "next/link";
 
 type CapstoneResult = {
   id: string;
@@ -26,8 +26,6 @@ const SearchEngine: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isEmbedding, setIsEmbedding] = useState(false);
   const [embeddingStatus, setEmbeddingStatus] = useState("");
-  const [selectedCapstone, setSelectedCapstone] =
-    useState<CapstoneResult | null>(null);
   const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
 
   // Run ingestion on mount
@@ -202,9 +200,9 @@ const SearchEngine: React.FC = () => {
               console.log("Abstract:", doc); // Log the abstract of each document
 
               return (
-                <li
+                <Link
+                  href={`search-engine/${doc.id}`}
                   key={doc.id}
-                  onClick={() => setSelectedCapstone(doc)}
                   className="cursor-pointer"
                 >
                   <SearchCard
@@ -218,29 +216,10 @@ const SearchEngine: React.FC = () => {
                       day: "numeric",
                     })}
                   />
-                </li>
+                </Link>
               );
             })}
       </ul>
-
-      {selectedCapstone && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSelectedCapstone(null)}
-          ></div>
-
-          <div
-            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CapstoneSidebar
-              capstone={selectedCapstone}
-              onClose={() => setSelectedCapstone(null)}
-            />
-          </div>
-        </>
-      )}
     </>
   );
 };
