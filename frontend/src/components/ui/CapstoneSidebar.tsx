@@ -2,6 +2,7 @@
 
 import { Book, Calendar, GraduationCap, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 type CapstoneSidebarProps = {
     capstone: {
@@ -19,9 +20,12 @@ type CapstoneSidebarProps = {
     onClose: () => void;
 };
 
-const CapstoneSidebar: React.FC<CapstoneSidebarProps> = ({ capstone, onClose }) => {
-    console.log("Capstone prop inside Sidebar:", capstone);  // Log the whole capstone object
-    console.log("Capstone Abstract:", capstone.abstract);    // Log the abstract specifically
+const CapstoneSidebar: React.FC<CapstoneSidebarProps> = (
+    { capstone, onClose },
+) => {
+    console.log("Capstone prop inside Sidebar:", capstone); // Log the whole capstone object
+    console.log("Capstone Abstract:", capstone.abstract); // Log the abstract specifically
+    const router = useRouter();
 
     return (
         <motion.div
@@ -45,21 +49,28 @@ const CapstoneSidebar: React.FC<CapstoneSidebarProps> = ({ capstone, onClose }) 
                     {capstone.title}
                 </h2>
                 <h4 className="text-xs font-medium mb-1 leading-snug">
-                    {capstone.authors && Array.isArray(capstone.authors) && capstone.authors.length > 0 ? (
-                        <div className="space-y-1">
-                            <h3 className="font-semibold">Authors</h3>
-                            <ul className="list-disc list-inside text-sm">
-                            {capstone.authors.map((author: any, index: number) => (
-                                <li key={index}>
-                                {author.name} — {author.email}
-                                </li>
-                            ))}
-                            </ul>
-                        </div>
-                        ) : (
-                        <p className="text-sm italic text-gray-500">No authors listed.</p>
+                    {capstone.authors && Array.isArray(capstone.authors) &&
+                            capstone.authors.length > 0
+                        ? (
+                            <div className="space-y-1">
+                                <h3 className="font-semibold">Authors</h3>
+                                <ul className="list-disc list-inside text-sm">
+                                    {capstone.authors.map((
+                                        author: any,
+                                        index: number,
+                                    ) => (
+                                        <li key={index}>
+                                            {author.name} — {author.email}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )
+                        : (
+                            <p className="text-sm italic text-gray-500">
+                                No authors listed.
+                            </p>
                         )}
-
                 </h4>
 
                 <div className="space-y-2 mt-3 text-gray-700 text-sm">
@@ -96,7 +107,10 @@ const CapstoneSidebar: React.FC<CapstoneSidebarProps> = ({ capstone, onClose }) 
                     {capstone.abstract}
                 </p>
 
-                <button className="mt-6 w-full bg-secondary text-gray py-2 rounded-md font-semibold hover:opacity-90 transition text-sm">
+                <button
+                    onClick={() => router.push(`/search/${capstone.id}`)}
+                    className="mt-6 w-full bg-secondary text-gray py-2 rounded-md font-semibold hover:opacity-90 transition text-sm"
+                >
                     More Details
                 </button>
             </div>
