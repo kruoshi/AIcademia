@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronRight,
   CircleHelp,
@@ -11,20 +11,45 @@ import {
 } from "lucide-react";
 import KeywordProcessor from "@/components/keyword-processor";
 import EnvDebug from "@/components/env-debug";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSession } from "next-auth/react";
 
+const supabase = createClientComponentClient();
 type ParsedData = {
   title: string;
   abstract: string;
   keywords: string[];
   introduction: string;
 };
-
 export default function UploadProjectPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
   const [processingComplete, setProcessingComplete] = useState(false);
   const [showKeywordProcessor, setShowKeywordProcessor] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    const email = session?.user?.email;
+    console.log("Session email:", email);
+    if (!email) return;
+
+    (async () => {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      console.log("Profile fetch result:", profile);
+      if (profileError) console.error("Profile fetch error:", profileError);
+
+      if (profile?.id && session?.user?.name) {
+        setUsername(session.user.name);
+      }
+    })();
+  }, [session]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] || null;
@@ -38,28 +63,149 @@ export default function UploadProjectPage() {
     if (!file) return;
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const mockData: ParsedData = {
-        title: file.name.replace(/\.[^/.]+$/, ""),
-        abstract: "This is a sample abstract extracted from the uploaded PDF.",
-        keywords: ["sample", "academic", "research", "keywords"],
-        introduction: "This is the introduction section of the paper...",
-      };
+      const flaskResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      setParsedData(mockData);
+      const result = await flaskResponse.json();
+      if (!result.success) {
+        alert("Failed to extract data: " + result.error);
+        return;
+      }
+
+      const email = session?.user?.email;
+      if (!email) {
+        alert("User not authenticated.");
+        return;
+      }
+
+      const { data: authUser, error: authError } = await supabase.auth
+        .getUser();
+      console.log("Supabase Auth User:", authUser);
+      if (authError) console.error("Auth error:", authError);
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      console.log("Profile fetch result:", profile);
+      if (profileError) console.error("Profile fetch error:", profileError);
+
+      if (!profile?.id) {
+        alert("User profile not found.");
+        return;
+      }
+      const profile_id = parseInt(profile.id, 10);
+      console.log("Parsed profile_id (as bigint):", profile_id);
+      const fullName = session.user?.name || "Unknown User";
+
+      if (!profile_id) {
+        alert("User profile not found.");
+        return;
+      }
+
+      const title = result.title || file.name.replace(/\.[^/.]+$/, "");
+      const slugBase = title.toLowerCase().replace(/\W+/g, "-").replace(
+        /^\-+|\-+$/g,
+        "",
+      );
+      const slug = `${slugBase}-${Date.now()}`;
+      const pdfFileName = `AIAcademia-pdf-${slug}.pdf`;
+
+      let finalFileName = pdfFileName;
+      let attempt = 0;
+      let uploadResponse;
+      do {
+        uploadResponse = await supabase.storage.from("acm-papers").upload(
+          finalFileName,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+          },
+        );
+
+        if (
+          uploadResponse.error?.message?.includes("The resource already exists")
+        ) {
+          attempt++;
+          finalFileName = `AIAcademia-pdf-${slug}-${attempt}.pdf`;
+        }
+      } while (
+        uploadResponse.error?.message?.includes(
+          "The resource already exists",
+        ) && attempt < 5
+      );
+
+      if (uploadResponse.error) {
+        console.error(uploadResponse.error);
+        alert("PDF upload failed.");
+        return;
+      }
+
+      const pdfUrl =
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/acm-papers/${finalFileName}`;
+      const keywords = result.keywords || [];
+
+      const insertResponse = await fetch("/api/submit-capstone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id,
+          title,
+          abstract: result.abstract,
+          authors: result.authors || [],
+          slug,
+          pdf_url: pdfUrl,
+          keywords,
+          status: "draft",
+          specialization: null,
+          course: null,
+          extracted_text: null,
+        }),
+      });
+
+      let success, insertError;
+      try {
+        ({ success, error: insertError } = await insertResponse.json());
+      } catch (e) {
+        const text = insertResponse.statusText || "(no status text)";
+        console.error("Non-JSON response:", text);
+        alert("Upload failed: server returned an unexpected response.");
+        return;
+      }
+
+      if (insertError) {
+        console.error(insertError);
+        alert("Failed to save capstone.");
+        return;
+      }
+
+      setParsedData({
+        title,
+        abstract: result.abstract,
+        keywords,
+        introduction: "",
+      });
+
+      setShowKeywordProcessor(true);
+      alert(`✅ ${fullName}'s capstone saved successfully!`);
     } catch (err) {
-      console.error(err);
-      alert("There was an error processing your document.");
+      console.error("Upload error:", err);
+      alert("Something went wrong.");
     } finally {
       setLoading(false);
-      setShowKeywordProcessor(true);
     }
   };
+
+  // rest of the component remains unchanged
 
   const onProcessingComplete = () => {
     setProcessingComplete(true);
@@ -242,15 +388,13 @@ export default function UploadProjectPage() {
               >
                 {loading ? "Processing..." : "UPLOAD"}
               </button>
-
-              <EnvDebug />
             </div>
           </div>
 
           {showKeywordProcessor && (
             <div className="mt-6 p-4 border border-gray-200 rounded-lg">
               <h2 className="text-xl font-bold mb-4">
-                Automatic Keyword Processing
+                File Processing
                 <span className="ml-2 text-sm font-normal text-gray-500">
                   (Processing will start automatically)
                 </span>

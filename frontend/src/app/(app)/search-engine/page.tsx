@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import SearchCardSkeleton from "@/components/ui/SkeletonSearchCard";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
+import CapstoneSidebar from "@/components/ui/CapstoneSidebar";
 
 type CapstoneResult = {
   id: string;
@@ -14,113 +15,131 @@ type CapstoneResult = {
   title: string;
   keywords: string[];
   specialization: string;
-  course: string;
-  published_at: string;
   similarity_score?: number;
+  abstract: string;
+  course: string;
+  authors: string;
+  published_at: string;
   created_at: string;
 };
 
 const SearchEngine: React.FC = () => {
-  const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isEmbedding, setIsEmbedding] = useState(false);
-  const [embeddingStatus, setEmbeddingStatus] = useState("");
+const [query, setQuery] = useState("");
+const [loading, setLoading] = useState(false);
+const [isEmbedding, setIsEmbedding] = useState(false);
+const [embeddingStatus, setEmbeddingStatus] = useState("");
+const [selectedCapstone, setSelectedCapstone] = useState<CapstoneResult | null>(null);
+const [searchResults, setSearchResults] = useState<CapstoneResult[]>([]);
 
-  useEffect(() => {
-    fetch('/api/ingest')
-      .then(res => res.json())
-      .then(data => console.log('Ingest result:', data))
-      .catch(console.error);
-  }, []);
-    
-  // Run embedding ingestion on component mount
-  useEffect(() => {
-    const runInitialEmbedding = async () => {
-      setIsEmbedding(true);
-      setEmbeddingStatus("Checking embeddings...");
-      
-      try {
-        // Check if embeddings need to be updated
+// Run ingestion on mount
+useEffect(() => {
+  fetch('/api/ingest')
+    .then(res => res.json())
+    .then(data => console.log('Ingest result:', data))
+    .catch(console.error);
+}, []);
+
+// Run embedding check on mount
+useEffect(() => {
+  const runInitialEmbedding = async () => {
+    setIsEmbedding(true);
+    setEmbeddingStatus("Checking embeddings...");
+
+    try {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      const { count: capstoneCount } = await supabase
+        .from('capstones')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: embedCount } = await supabase
+        .from('capstone_embed')
+        .select('*', { count: 'exact', head: true });
+
+      if (capstoneCount === 0) {
+        setEmbeddingStatus("No capstones found to embed");
+        return;
+      }
+
+      if (embedCount === 0 || embedCount < capstoneCount) {
+        setEmbeddingStatus(`Updating embeddings (${embedCount || 0}/${capstoneCount})...`);
+        const response = await fetch('/api/embed', { method: 'POST' });
+        const data = await response.json();
+        setEmbeddingStatus(`Embeddings updated: ${data.count} items processed`);
+      } else {
+        setEmbeddingStatus("Embeddings up to date");
+      }
+    } catch (error) {
+      console.error("Embedding error:", error);
+      setEmbeddingStatus("Error updating embeddings");
+    } finally {
+      setIsEmbedding(false);
+    }
+  };
+
+  runInitialEmbedding();
+}, []);
+
+// Query search results
+useEffect(() => {
+  if (!query) {
+    setSearchResults([]);
+    return;
+  }
+
+  const fetchSearchResults = async () => {
+    setLoading(true);
+    try {
+      const vectorRes = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+
+      if (vectorRes.ok) {
+        const vectorResults = await vectorRes.json();
+
+        // fallback or augmentation logic (e.g., add fuzzy matches)
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        // Count capstones vs embeddings
-        const { count: capstoneCount } = await supabase
-          .from('capstones')
-          .select('*', { count: 'exact', head: true });
+        const { data: supaResults, error } = await supabase
+          .from("capstones")
+          .select("id, slug, title, abstract, keywords, specialization, course, authors, created_at")
+          .ilike("title", `%${query}%`);
 
-        const { count: embedCount } = await supabase
-          .from('capstone_embed')
-          .select('*', { count: 'exact', head: true });
+        const combinedResults = [
+          ...vectorResults,
+          ...(supaResults || []).filter(
+            (s) => !vectorResults.find((v: any) => v.id === s.id)
+          ),
+        ];
 
-        if (capstoneCount === 0) {
-          setEmbeddingStatus("No capstones found to embed");
-          return;
-        }
-
-        if (embedCount === 0 || embedCount < capstoneCount) {
-          setEmbeddingStatus(`Updating embeddings (${embedCount || 0}/${capstoneCount})...`);
-          
-          const response = await fetch('/api/embed', {
-            method: 'POST'
-          });
-          
-          const data = await response.json();
-          setEmbeddingStatus(`Embeddings updated: ${data.count} items processed`);
-        } else {
-          setEmbeddingStatus("Embeddings up to date");
-        }
-      } catch (error) {
-        console.error("Embedding error:", error);
-        setEmbeddingStatus("Error updating embeddings");
-      } finally {
-        setIsEmbedding(false);
+        setSearchResults(combinedResults);
+        if (error) console.error(error);
+      } else {
+        const errorData = await vectorRes.json();
+        console.error(errorData.error);
       }
-    };
-
-    runInitialEmbedding();
-  }, []);
-
-  useEffect(() => {
-    if (!query) {
-      setSearchResults([]);
-      return;
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const fetchSearchResults = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/search', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query }),
-        });
+  const debounceTimer = setTimeout(() => {
+    fetchSearchResults();
+  }, 300);
 
-        const results = await res.json();
-        if (res.ok) {
-          setSearchResults(results);
-        } else {
-          console.error(results.error);
-        }
-      } catch (error) {
-        console.error("Search error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  return () => clearTimeout(debounceTimer);
+}, [query]);
 
-    const debounceTimer = setTimeout(() => {
-      fetchSearchResults();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [query]);
-  
   return (
     <>
       <div className="text-center md:pt-10">
@@ -164,40 +183,58 @@ const SearchEngine: React.FC = () => {
       </div>
 
       <ul className="mt-10 columns-1 sm:columns-2 xl:columns-3 sm:px-5 xl:px-10 2xl:px-20 gap-5 pb-5">
-        {loading
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <li key={i}>
-                <SearchCardSkeleton />
-              </li>
-            ))
-          : searchResults.map((doc) => (
-              <Link
-                href={`/capstones/${doc.id}`}
-                key={doc.id}
-                className="block hover:opacity-90 transition cursor-pointer"
-              >
-                <li>
-                  <SearchCard
-                    id={doc.id}
-                    title={doc.title}
-                    specialization={doc.keywords?.[1] || "General"}
-                    course={doc.keywords?.[0] || "IT"}
-                    date={new Date(doc.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  />
-                </li>
-              </Link>
-            ))}
-      </ul>
+{loading
+  ? Array.from({ length: 6 }).map((_, i) => (
+      <li key={i}>
+        <SearchCardSkeleton />
+      </li>
+    ))
+  : searchResults.map((doc) => (
+      <li
+        key={doc.id}
+        onClick={() => setSelectedCapstone(doc)}
+        className="cursor-pointer"
+      >
+        <SearchCard
+          id={doc.id}
+          title={doc.title}
+          specialization={doc.keywords?.[1] || "General"}
+          course={doc.keywords?.[0] || "IT"}
+          date={new Date(doc.created_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        />
+      </li>
+    ))}
+</ul>
 
-      {searchResults.length > 0 && (
-        <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
-          Show More
-        </button>
-      )}
+{selectedCapstone && (
+  <>
+    <div
+      className="fixed inset-0 bg-black/50 z-40"
+      onClick={() => setSelectedCapstone(null)}
+    ></div>
+
+    <div
+      className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-lg overflow-y-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <CapstoneSidebar
+        capstone={selectedCapstone}
+        onClose={() => setSelectedCapstone(null)}
+      />
+    </div>
+  </>
+)}
+
+{searchResults.length > 0 && (
+  <button className="mt-10 mx-auto block text-center text-lg px-8 py-1.5 rounded-full font-semibold bg-secondary-dark">
+    Show More
+  </button>
+)}
+
     </>
   );
 };

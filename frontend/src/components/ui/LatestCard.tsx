@@ -4,6 +4,7 @@ type CardProps = {
   specialization: string;
   course: string;
   date: string;
+  onClick?: () => void;
 };
 
 const LatestCard: React.FC<CardProps> = ({
@@ -12,10 +13,12 @@ const LatestCard: React.FC<CardProps> = ({
   specialization,
   course,
   date,
+  onClick,
 }) => {
   return (
     <div
       key={id}
+      onClick={onClick}
       className="bg-white rounded-sm shadow-md/5 py-2 sm:py-3 px-3 font-roboto cursor-pointer flex flex-col gap-2.5 justify-between text-center items-center h-full"
     >
       <h1 className="text-xs text-text sm:text-sm 3xl:text-base font-semibold pr-3 mt-2 line-clamp-4 sm:line-clamp-3 ">
