@@ -1,0 +1,8 @@
+flask
+easyocr
+numpy
+pdf2image
+PyMuPDF
+supabase
+python-dotenv
+openai
